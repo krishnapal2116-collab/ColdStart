@@ -35,6 +35,8 @@ The machine-readable report contract is documented in `docs/07_CLI_AND_REPORT_CO
 - [Report JSON Schema](docs/contracts/report-v1.schema.json)
 - [Sanitized example report](docs/contracts/report-v1.example.json)
 
+The advanced roadmap is intentionally layered: P0 adds evidence strength, deterministic audit fingerprints, self-audit, and no static staging workspace. P1 may add baseline comparison, rule explanations, policy profiles, and plan-only verification one at a time.
+
 ## Proposed P0 command
 
 ```text

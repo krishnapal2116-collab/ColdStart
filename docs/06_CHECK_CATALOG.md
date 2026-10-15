@@ -21,7 +21,7 @@ Every check below is deterministic, non-executing, and registered with a stable 
 
 ### Common evidence requirements
 
-Evidence uses project-relative paths, bounded details, optional line ranges, and redaction. Absence evidence describes where ColdStart looked. A risk indicator is labeled as an indicator, not proof of a defect.
+Evidence uses project-relative paths, bounded details, optional line ranges, and redaction. Every finding also carries one evidence-strength value: `direct`, `derived`, `indicator`, `absence`, or `unverified`. Absence evidence describes where ColdStart looked. A risk indicator is labeled as an indicator, not proof of a defect.
 
 ## 2. Check index
 

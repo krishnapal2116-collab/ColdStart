@@ -26,11 +26,11 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 ### M1 — Smallest end-to-end static audit
 
 - **Goal:** `coldstart audit PATH` validates a directory and emits a truthful empty/minimal report.
-- **Requirements:** FR-001, FR-002, FR-006, FR-007, FR-009, FR-010, FR-011; NFR-001, NFR-002.
+- **Requirements:** FR-001, FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-028, FR-029; NFR-001, NFR-002, NFR-015.
 - **Expected files/modules:** `cli`, `boundary`, `findings`, `reporting`, `policy`.
 - **Dependencies:** M0.
-- **Tasks:** Implement argument parsing, boundary result, normalized report model, terminal/JSON serializers, exit codes.
-- **Tests:** Valid/invalid path, six status values, schema validation, terminal/JSON parity, no subprocess.
+- **Tasks:** Implement argument parsing, boundary result, normalized report model, evidence-strength taxonomy, audit fingerprint, terminal/JSON serializers, and exit codes.
+- **Tests:** Valid/invalid path, six status values, evidence-strength values, fingerprint stability, schema validation, terminal/JSON parity, no subprocess.
 - **Acceptance:** A safe audit of a fixture produces stable output and never runs project code.
 - **Failure conditions:** Report cannot represent unknowns, JSON/terminal disagree, or invalid paths reach discovery.
 - **Git checkpoint:** `feat: add safe audit command and report model`.
@@ -42,8 +42,8 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Requirements:** FR-003, FR-004, FR-012, FR-014, FR-015; NFR-005, NFR-006, NFR-007.
 - **Expected files/modules:** `discovery`, `config`, file-limit logic, fixture inventory cases.
 - **Dependencies:** M1.
-- **Tasks:** Add sorted inventory, limits, exclusions, symlink handling, TOML policy parsing, applicability decisions.
-- **Tests:** Large/malformed/unreadable/symlink/path fixtures, invalid config, repeated inventory.
+- **Tasks:** Add sorted inventory, limits, exclusions, symlink handling, TOML policy parsing, applicability decisions, and the invariant that P0 creates no staging workspace.
+- **Tests:** Large/malformed/unreadable/symlink/path fixtures, invalid config, repeated inventory, and P0 temporary-workspace observation.
 - **Acceptance:** Coverage limits and applicability are visible; no external symlink is followed.
 - **Failure conditions:** Unbounded read, policy fail-open, or non-deterministic discovery.
 - **Git checkpoint:** `feat: add bounded discovery and applicability`.
@@ -78,12 +78,12 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 ### M5 — P0 hardening and clean release candidate
 
 - **Goal:** Demonstrate the small working product under competition constraints.
-- **Requirements:** All P0 FR/NFR; especially FR-013–017 and NFR-001–012.
+- **Requirements:** All P0 FR/NFR; especially FR-013–017, FR-028–030, NFR-001–012, and NFR-015.
 - **Expected files/modules:** tests, fixtures, docs, CI/local scripts, release evidence.
 - **Dependencies:** M4.
-- **Tasks:** Run complete offline suite, clean Linux build, Docker build of ColdStart, cross-platform smoke checks, documentation audit, demo preparation.
-- **Tests:** `make test`, clean checkout, Docker build/run, security suite, deterministic snapshots, no-network test.
-- **Acceptance:** P0 definition of done and all release-blocking defects closed.
+- **Tasks:** Run complete offline suite, clean Linux build, Docker build of ColdStart, cross-platform smoke checks, self-audit the ColdStart repository, documentation audit, and demo preparation.
+- **Tests:** `make test`, clean checkout, Docker build/run, security suite, deterministic snapshots, no-network test, and self-audit report review.
+- **Acceptance:** P0 definition of done, a reviewed self-audit, and all release-blocking defects closed.
 - **Failure conditions:** Any false pass, unsafe execution, reproducibility gap, or undocumented requirement.
 - **Git checkpoint:** `release: ColdStart P0 candidate`.
 - **Relative effort:** Large and reserved time.
@@ -94,22 +94,22 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Requirements:** FR-018, FR-019, NFR-013, NFR-014.
 - **Expected files/modules:** `execution` broker, plan/authorization, staging, Docker runner, receipts, P1 fixtures.
 - **Dependencies:** M5; Docker-enabled environment; threat-model review.
-- **Tasks:** Implement structured argv, plan prompt, network/resource/output limits, timeout/cleanup, manifest comparison, Docker build attempt.
+- **Tasks:** Implement plan-only preview first, then structured argv, approval prompt, network/resource/output limits, timeout/cleanup, manifest comparison, and Docker build attempt.
 - **Tests:** Authorization denial, pass/fail, timeout, network deny, Docker unavailable, cleanup, source unchanged.
 - **Acceptance:** No execution occurs without explicit plan/approval; actual results are recorded.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
 - **Git checkpoint:** `feat: add authorized Docker verification`.
 - **Relative effort:** Very large; omit if it threatens P0.
 
-### M7 — Optional competition enhancements
+### M7 — Optional advanced improvements
 
-- **Goal:** Add only a small number of P1 features that improve the demo without destabilizing P0.
-- **Requirements:** FR-020, FR-021, or FR-022 only if selected.
-- **Expected files/modules:** SARIF/baseline/additional adapter, focused tests/docs.
+- **Goal:** Add one evidence-preserving P1 enhancement without destabilizing P0.
+- **Requirements:** FR-020, FR-021, FR-031, FR-032, FR-033, or FR-034 only if selected.
+- **Expected files/modules:** baseline comparison, `explain` command, policy profiles, SARIF, or an additional adapter; focused tests/docs.
 - **Dependencies:** M5 and owner decision.
-- **Tasks:** Select one feature, update contract/traceability, implement, test, and demo it honestly.
+- **Tasks:** Select exactly one feature after M5; update contract/traceability, implement, test, and demo it honestly. Prefer baseline/diff or `explain` before broader ecosystem support.
 - **Tests:** Feature-specific contract and regression tests.
-- **Acceptance:** P0 remains green and the feature is clearly versioned.
+- **Acceptance:** P0 remains green, the feature is clearly versioned, and no new feature changes the meaning of P0 statuses.
 - **Failure conditions:** Scope expansion or contract regression.
 - **Git checkpoint:** `feat: add approved P1 enhancement`.
 - **Relative effort:** Small to large depending on choice; may be skipped.

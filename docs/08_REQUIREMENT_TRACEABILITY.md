@@ -23,7 +23,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | FR-012 | Local configuration | P0 | `config`, `policy` | TOML policy | `test_policy_parse_fail_closed` | Valid changes policy; invalid stops | Unit/CLI |
 | FR-013 | No AI/network/deps in P0 | P0 | `cli`, `checks` | Privacy contract | `test_p0_offline_no_network` | P0 works without services | Offline/security |
 | FR-014 | Repository read-only | P0 | `boundary`, `reporting` | Privacy contract | `test_static_manifest_unchanged` | No source mutation | Integration |
-| FR-015 | Cleanup owned temp material | P0 | `boundary` | Cleanup rules | `test_cleanup_all_exit_paths` | No unreported owned temp | Integration |
+| FR-015 | P0 staging-free; P1 temp cleanup | P0 | `boundary` | Cleanup rules | `test_cleanup_all_exit_paths` | No P0 staging; no unreported P1 temp | Integration |
 | FR-016 | Python P0 adapter | P0 | `checks/python` | P0 catalog | `test_python_fixture_catalog` | Python fixture checks work | Integration |
 | FR-017 | ColdStart setup docs | P0 | repository docs | Build contract | `test_clean_checkout_procedure` | Exact commands documented | Build/review |
 | FR-018 | Authorized offline tests | P1 | `execution` | Verify receipt | `test_execution_authorization` | Actual receipt or unknown | Docker/integration |
@@ -36,6 +36,13 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | FR-025 | Remote/hosted service | P2 | none | Local-only contract | `test_no_remote_ingestion` | Local path only | Review |
 | FR-026 | Agents/distributed/plugins | P2 | none | Scope boundary | `test_mvp_dependency_inventory` | No framework required | Review |
 | FR-027 | Universal guarantee | P2 | `reporting`, docs | Limitation text | `test_report_has_limitations` | No overclaim | Contract/review |
+| FR-028 | Evidence-strength taxonomy | P0 | `findings`, `reporting` | Finding schema | `test_evidence_strength_contract` | Stable class, no invented percentage | Contract |
+| FR-029 | Audit fingerprint | P0 | `findings`, `reporting` | Report repository field | `test_fingerprint_stability` | Equivalent inputs yield same fingerprint | Determinism |
+| FR-030 | ColdStart self-audit | P0 | release process, `cli` | Release gate | `test_self_audit_fixture` | Release evidence contains actual self-audit | Release/integration |
+| FR-031 | Baseline comparison | P1 | `policy`, `reporting` | Compare command | `test_baseline_diff` | Added/resolved/changed findings are stable | Integration |
+| FR-032 | Rule explanation | P1 | `cli`, `checks` | Explain command | `test_explain_check` | Catalog explanation is complete and offline | CLI |
+| FR-033 | Policy profiles | P1 | `config`, `policy` | Profile option | `test_policy_profiles` | Profiles preserve rule/status semantics | Contract/CLI |
+| FR-034 | Plan-only verification | P1 | `execution`, `cli` | Verify plan | `test_verify_plan_no_child` | Plan displays constraints without execution | Security/CLI |
 
 ## 2. Non-functional requirements
 
@@ -55,6 +62,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | NFR-012 | Auditable results | P0 | `findings`, `reporting` | Provenance fields | `test_report_provenance` | Options/status/versions present | Contract |
 | NFR-013 | Constrained P1 execution | P1 | `execution` | Receipt contract | `test_timeout_output_network_controls` | Limits recorded/enforced | Docker/security |
 | NFR-014 | Docker optional for P0 | P1 | `execution`, `cli` | Unavailable semantics | `test_static_without_docker` | Static report still useful | Integration |
+| NFR-015 | Deterministic evidence wording | P0 | `findings`, `reporting` | Evidence-strength enum | `test_evidence_wording` | Same evidence yields same class/text | Determinism |
 
 ## 3. P0 check traceability
 

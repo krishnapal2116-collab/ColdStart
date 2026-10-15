@@ -118,6 +118,9 @@ ColdStart differentiates itself through a narrow promise and disciplined evidenc
 - offline test execution verification in a constrained environment;
 - SARIF export if it can be implemented without weakening the core contract;
 - baseline comparison across audits;
+- a `coldstart explain CHECK_ID` rule-explanation command;
+- built-in beginner, strict, and CI policy profiles;
+- a plan-only verification preview before any P1 execution;
 - one additional well-supported repository ecosystem.
 
 ### Explicitly outside the first release
@@ -140,7 +143,29 @@ ColdStart differentiates itself through a narrow promise and disciplined evidenc
 - Docker is an optional verification capability, not a prerequisite for the static audit.
 - A check can be useful without proving a defect. Risk indicators are labeled as indicators, not certainty.
 
-## 11. Constraints
+## 11. Recommended advanced improvements
+
+These improvements make ColdStart more trustworthy and useful without turning the MVP into an enterprise platform. They are deliberately split by release priority.
+
+### Adopt in P0
+
+1. **Evidence-strength classification:** Every finding identifies whether its evidence is `direct`, `derived`, `indicator`, `absence`, or `unverified`. This replaces arbitrary confidence percentages and makes wording deterministic.
+2. **Audit fingerprint:** Every normalized report contains a reproducibility fingerprint derived from the bounded repository evidence, policy, tool version, and check-catalog version. Run IDs and timestamps do not affect the fingerprint.
+3. **ColdStart self-audit:** The release process audits the ColdStart repository with ColdStart itself. This is a release gate, not a claim that the current planning workspace has passed.
+4. **No P0 staging workspace:** Static auditing reads the repository and writes only requested reports/diagnostics. Repository staging and temporary execution data belong to P1 verification.
+
+### Add in P1, one at a time
+
+1. **Baseline/diff comparison:** Compare fingerprints and findings to identify new, resolved, unchanged, or worsened risks.
+2. **Rule explanation:** `coldstart explain CHECK_ID` shows the rule purpose, applicability, algorithm summary, evidence semantics, limitations, and remediation examples.
+3. **Policy profiles:** `beginner`, `strict`, and `ci` profiles provide safe defaults without changing rule meaning or hiding findings.
+4. **Plan-only verification:** `coldstart verify PATH --kind tests --plan` or `--kind docker-build --plan` previews the exact operation and constraints before approval.
+
+### Deliberately not recommended for the MVP
+
+ColdStart should not add AI-generated fixes, a primary readiness score, automatic modifications, remote ingestion, hosted dashboards, a plugin marketplace, or all-language support merely to appear advanced. Those features add complexity without improving the core evidence promise enough for the competition deadline.
+
+## 12. Constraints
 
 - The competition deadline is a hard constraint; a reliable small product is more valuable than broad but shallow ecosystem coverage.
 - The inspected repository is untrusted input.
@@ -149,7 +174,7 @@ ColdStart differentiates itself through a narrow promise and disciplined evidenc
 - Dependencies, runtime, Dockerfile, lockfile, and test command for ColdStart itself must be documented and reproducible before release.
 - No secrets may be committed, emitted in example reports, or copied into project documentation.
 
-## 12. Success metrics
+## 13. Success metrics
 
 These are target acceptance measures, not current results:
 
@@ -162,11 +187,11 @@ These are target acceptance measures, not current results:
 7. **Truthfulness:** no release test permits an execution-based `passed` result without an observed successful exit and cleanup.
 8. **Performance target:** a typical Python repository of up to 10,000 bounded files completes the static audit within 30 seconds on the reference development machine, excluding Docker or test execution.
 
-## 13. Buildathon positioning
+## 14. Buildathon positioning
 
 ColdStart demonstrates the same reproducibility discipline that it recommends: pinned runtime, locked dependencies, a Docker build path, an offline test command, clean-checkout instructions, and evidence from actual verification. The demonstration must show a deliberate defect and a truthful before/after assessment rather than a simulated successful run.
 
-## 14. Product risks
+## 15. Product risks
 
 | Risk | Consequence | Response |
 | --- | --- | --- |

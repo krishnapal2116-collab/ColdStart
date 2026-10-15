@@ -19,6 +19,9 @@ P1 verification invocations are reserved until the P0 audit is stable:
 ```text
 coldstart verify REPOSITORY_PATH --kind tests --offline
 coldstart verify REPOSITORY_PATH --kind docker-build
+coldstart verify REPOSITORY_PATH --kind tests --plan
+coldstart explain CHECK_ID
+coldstart compare CURRENT_REPORT BASELINE_REPORT
 ```
 
 The P0 `audit` command never executes repository code. `verify` is a distinct command and must not be implemented as a hidden side effect of `audit`.
@@ -33,6 +36,7 @@ The P0 `audit` command never executes repository code. `verify` is a distinct co
 | `--output PATH` | Write the selected report | stdout |
 | `--config PATH` | Read a policy file | Search `.coldstart.toml` at repository root if present |
 | `--strict` | Treat configured unknown/incomplete states as a policy failure | false |
+| `--profile beginner\|strict\|ci` | Select a documented P1 policy preset | none |
 | `--no-color` | Disable terminal styling | auto based on TTY |
 | `--max-files N` | Bound file inventory | documented default |
 | `--max-bytes N` | Bound bytes read | documented default |
@@ -114,6 +118,7 @@ The following fields are authoritative for schema version `1.0`.
 | `category` | yes | no | enum | `project`, `dependencies`, `runtime`, `documentation`, `configuration`, `portability`, `security`, `build`, `execution` |
 | `applicability` | yes | no | object | Applicable/`not_applicable` reason and adapter |
 | `rule_version` | yes | no | string | Algorithm version |
+| `evidence_strength` | yes | no | enum | `direct`, `derived`, `indicator`, `absence`, `unverified` |
 
 An evidence object contains:
 
@@ -147,7 +152,19 @@ redaction
 summary
 ```
 
-`tool` contains name/version/catalog version. `invocation` contains safe options and boundary limits. `repository` contains a local label and scan-boundary summary, not an absolute path by default. `detection` contains candidates and applicability. `policy` contains policy name, decision, configured unknown handling, and violations. `verification` contains requested/authorized/executed actions. `redaction` contains mode and counts, never values. `summary` contains counts by status/severity and overall decision.
+`tool` contains name/version/catalog version. `invocation` contains safe options and boundary limits. `repository` contains a local label, scan-boundary summary, and required `audit_fingerprint`, not an absolute path by default. `detection` contains candidates and applicability. `policy` contains policy name, decision, configured unknown handling, and violations. `verification` contains requested/authorized/executed actions. `redaction` contains mode and counts, never values. `summary` contains counts by status/severity and overall decision.
+
+### Audit fingerprint
+
+`audit_fingerprint` is a lowercase SHA-256 digest over a canonical serialization of:
+
+- ColdStart tool version;
+- check-catalog version;
+- normalized policy and applicable limits;
+- normalized relative paths and bounded file metadata/content digests;
+- project-detection and applicability inputs.
+
+The fingerprint excludes report IDs, timestamps, absolute paths, terminal formatting, and unbounded source content. It identifies the audited evidence state; it does not prove that the project is universally reproducible.
 
 The companion JSON Schema and sanitized example are stored in `docs/contracts/report-v1.schema.json` and `docs/contracts/report-v1.example.json`; they must be updated whenever this contract changes.
 
@@ -162,6 +179,7 @@ Summary: passed=N failed=N not_applicable=N skipped=N not_verified=N error=N
 
 [SEVERITY] CHECK-ID — Title
   Status: <status>
+  Evidence strength: <direct / derived / indicator / absence / unverified>
   Message: <plain-language explanation>
   Evidence: <relative path/line or explicit absence>
   Fix: <actionable remediation>
@@ -181,6 +199,7 @@ Findings sort by severity rank, then category, then `check_id`. The renderer nev
 - Normalize `.` and reject external `..` traversal.
 - Sort file paths, candidate types, findings, and evidence deterministically.
 - Exclude run ID and timestamps from normalized-result comparisons.
+- Calculate `audit_fingerprint` only from the canonical normalized inputs defined above.
 
 ## 12. Compatibility and versioning
 
@@ -199,3 +218,21 @@ When implemented, every P1 attempt contains:
 - actual result status and limitation.
 
 No receipt with no observed execution may claim `passed`.
+
+## 14. Advanced P1 command contracts
+
+### `coldstart explain CHECK_ID`
+
+This command reads the reviewed check catalog and prints the check purpose, applicability, algorithm summary, evidence-strength semantics, limitations, test references, and remediation guidance. It does not inspect a repository, call an AI service, or execute code.
+
+### `coldstart compare CURRENT_REPORT BASELINE_REPORT`
+
+This command compares compatible JSON reports by stable check ID and fingerprint. It reports `added`, `resolved`, `unchanged`, and `changed` findings, including severity/status changes. It must reject incompatible schema or catalog versions rather than guessing.
+
+### `--profile`
+
+The `beginner`, `strict`, and `ci` profiles are policy presets. They may change display detail, unknown handling, and exit policy, but they must not remove findings, change rule algorithms, or turn a non-pass status into `passed`.
+
+### `verify --plan`
+
+The plan-only flag renders the proposed P1 operation and constraints, returns without launching a child process, and records no execution receipt claiming that a command ran.

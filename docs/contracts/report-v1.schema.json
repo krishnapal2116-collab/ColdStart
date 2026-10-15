@@ -46,6 +46,7 @@
         "command": { "type": "string" },
         "format": { "enum": ["terminal", "json"] },
         "strict": { "type": "boolean" },
+        "profile": { "type": ["string", "null"] },
         "config_path": { "type": ["string", "null"] },
         "limits": { "type": "object", "additionalProperties": true }
       },
@@ -53,10 +54,11 @@
     },
     "repository": {
       "type": "object",
-      "required": ["label", "boundary"],
+      "required": ["label", "boundary", "audit_fingerprint"],
       "properties": {
         "label": { "type": "string", "minLength": 1 },
         "boundary": { "type": "object", "additionalProperties": true },
+        "audit_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "scan_digest": { "type": ["string", "null"] }
       },
       "additionalProperties": true
@@ -83,7 +85,8 @@
         "affected_path",
         "category",
         "applicability",
-        "rule_version"
+        "rule_version",
+        "evidence_strength"
       ],
       "properties": {
         "check_id": { "type": "string", "minLength": 1 },
@@ -96,7 +99,8 @@
         "affected_path": { "type": ["string", "null"] },
         "category": { "enum": ["project", "dependencies", "runtime", "documentation", "configuration", "portability", "security", "build", "execution"] },
         "applicability": { "$ref": "#/$defs/applicability" },
-        "rule_version": { "type": "string", "minLength": 1 }
+        "rule_version": { "type": "string", "minLength": 1 },
+        "evidence_strength": { "enum": ["direct", "derived", "indicator", "absence", "unverified"] }
       },
       "additionalProperties": true
     },

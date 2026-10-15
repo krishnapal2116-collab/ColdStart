@@ -31,13 +31,13 @@ The following checks were run after the document pack was written:
 
 - Git status and file inventory: the required documents and contract artifacts are present; no application source files are tracked.
 - `git diff --check` and `git log --check --oneline --all`: passed.
-- Unique requirement-ID validation: 41 unique IDs (27 functional and 14 non-functional) in the requirements document.
-- Requirement traceability: all 41 requirement IDs are present in the traceability matrix; all 29 P0 requirements have planned acceptance tests.
+- Unique requirement-ID validation: 49 unique IDs (34 functional and 15 non-functional) in the requirements document.
+- Requirement traceability: all 49 requirement IDs are present in the traceability matrix; all 33 P0 requirements have planned acceptance tests.
 - Check traceability: 13 unique P0 checks are present in the catalog, traceability matrix, and test strategy.
 - Local Markdown-link validation: 17 local links resolved.
 - JSON contract validation: both JSON artifacts have valid syntax; top-level/finding required fields and summary counts were checked against the example.
 - Secret-pattern review: no real credential pattern was found. The catalog contains only intentional placeholder path examples such as `C:\Users\name\project` and `/home/name/project`.
-- Cross-document comparison: command names, statuses, exit codes, runtime target, P0/P1/P2 scope, and privacy/safety claims agree.
+- Cross-document comparison: command names, statuses, exit codes, runtime target, P0/P1/P2 scope, advanced-improvement placement, and privacy/safety claims agree.
 
 ## 4. Quality review
 
@@ -50,7 +50,7 @@ The following checks were run after the document pack was written:
 | Privacy clarity | 4/5 | Local-only data flow, reports, temp files, redaction, and retention are defined. |
 | CLI/report precision | 4/5 | Commands, statuses, exit codes, fields, ordering, and versioning are specified. |
 | Check catalog completeness | 4/5 | All 13 P0 checks include algorithms, applicability, evidence, remediation, tests, and limits. |
-| Testability | 4/5 | P0 requirements and checks map to fixtures and planned test IDs; no results are invented. |
+| Testability | 4/5 | P0 requirements, checks, and advanced acceptance cases map to fixtures and planned test IDs; no results are invented. |
 | Build reproducibility | 3/5 | Commands and gates are exact, but implementation has not run them yet. |
 | Traceability | 4/5 | All requirements map to modules/contracts/tests; state remains specified, not implemented. |
 | Implementation feasibility | 4/5 | Vertical slices protect P0 and reserve time for integration and security. |
@@ -69,6 +69,7 @@ The review found and handled these items:
 5. **Open, medium — build evidence:** Python 3.12.8 setup, lockfile installation, `make test`, Docker build, and clean-checkout commands are specified but not executed because implementation is prohibited in this phase. Impact: ColdStart cannot yet claim that it builds or passes tests.
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
+8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, profiles, and plan-only verification remain P1 and are explicitly optional.
 
 No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize implementation.
 

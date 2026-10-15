@@ -33,8 +33,9 @@ It must not retain a full source tree in an in-memory cache after report generat
 P0 may write only:
 
 - a report to stdout or an explicit output path;
-- optional local diagnostics to an explicit path outside the inspected repository;
-- temporary internal data under a private OS temporary directory.
+- optional bounded diagnostics to an explicit path outside the inspected repository.
+
+P0 does not create a repository staging copy or execution workspace. P1 execution may create temporary staging data only after authorization.
 
 ColdStart must not write remediation changes, generated files, caches, lockfiles, virtual environments, or build outputs into the inspected repository. Writing a report inside the repository requires an explicit output path and a warning because it changes the scanned tree.
 
@@ -42,7 +43,7 @@ ColdStart must not write remediation changes, generated files, caches, lockfiles
 
 - Default terminal report: stdout; diagnostics/errors: stderr.
 - JSON report: stdout or the user-supplied `--output` path.
-- Default temporary data: private OS temp directory, deleted after the run.
+- Default P0 temporary data: none. P1 temporary data uses a private OS temp directory and is deleted after the run.
 - No automatic project copy, cloud retention, or report upload.
 - The user owns any explicitly saved report and is responsible for its retention and access control.
 - ColdStart should include a report note that a saved report may contain repository-relative filenames and sanitized metadata.

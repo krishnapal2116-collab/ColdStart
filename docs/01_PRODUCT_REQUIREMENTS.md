@@ -62,7 +62,7 @@
 | FR-012 | P0 | Support an optional local configuration file for policy and bounded limits. | Valid configuration changes only documented policy behavior; invalid configuration fails closed. |
 | FR-013 | P0 | Perform normal static auditing without an AI API, network access, or project dependencies. | Offline tests run with network disabled and no model/API configuration. |
 | FR-014 | P0 | Keep reports and static processing read-only with respect to the inspected repository. | A before/after manifest is unchanged after static audits, including failures. |
-| FR-015 | P0 | Clean up ColdStart-owned temporary material on success, failure, and cancellation. | Cleanup tests verify no owned temporary directory remains or failure is reported. |
+| FR-015 | P0 | Keep static audits staging-free; any P1 temporary material must be cleaned up on success, failure, and cancellation. | P0 filesystem observers show no staging workspace; P1 cleanup tests verify no owned temporary directory remains or failure is reported. |
 | FR-016 | P0 | Provide a complete Python repository adapter for the defined P0 checks. | Python fixtures cover applicable runtime, dependency, docs, configuration, path, and container checks. |
 | FR-017 | P0 | Document ColdStart setup, test, and clean-checkout reproduction requirements. | Documentation review finds exact future commands and no undocumented required global dependency. |
 | FR-018 | P1 | Propose and run an explicitly authorized offline test verification. | An approved test receives an execution receipt; denial or unavailable capability is not a pass. |
@@ -75,6 +75,13 @@
 | FR-025 | P2 | Ingest remote repositories or operate as a hosted account service. | Deferred: only a local path is accepted in the first release. |
 | FR-026 | P2 | Orchestrate multiple agents, distributed execution, or a plugin marketplace. | Deferred: no runtime or permanent-network framework is added for the MVP. |
 | FR-027 | P2 | Claim universal reproducibility or compatibility with every language. | Prohibited: reports and docs must state their scope and limitations. |
+| FR-028 | P0 | Classify finding evidence deterministically as `direct`, `derived`, `indicator`, `absence`, or `unverified`. | Contract and fixture tests reject missing/unknown evidence-strength values and confirm no percentage confidence is emitted. |
+| FR-029 | P0 | Include a deterministic audit fingerprint in every normalized report. | Equivalent bounded inputs, tool version, policy, and catalog produce the same fingerprint; timestamps and run IDs do not affect it. |
+| FR-030 | P0 | ColdStart MUST audit its own release-candidate repository before release. | Release evidence contains an actual self-audit report and a reviewed result. |
+| FR-031 | P1 | Compare a current report with a baseline using findings and audit fingerprints. | A comparison identifies added, resolved, unchanged, and worsened findings deterministically. |
+| FR-032 | P1 | Explain a stable check ID without using an AI service. | `coldstart explain CHECK_ID` shows purpose, applicability, algorithm, evidence, limitations, and remediation. |
+| FR-033 | P1 | Provide beginner, strict, and CI policy profiles without changing rule semantics. | Profile tests show only documented policy/presentation differences and preserve all findings. |
+| FR-034 | P1 | Preview an execution plan without executing it. | `verify --plan` displays command, working directory, network, limits, and side effects while producing no child process. |
 
 ## 6. Non-functional requirements
 
@@ -94,6 +101,7 @@
 | NFR-012 | P0 | Auditability: results record tool/schema versions, options, applicability, and execution authorization state. | Report contract tests require provenance and limitation fields. |
 | NFR-013 | P1 | Authorized execution is constrained by working directory, argv, timeout, output, process, and network policy. | Docker/test integration tests cover each control and failure mode. |
 | NFR-014 | P1 | Docker verification is optional and never a hidden prerequisite for static usefulness. | Docker-unavailable integration test still produces a complete static report. |
+| NFR-015 | P0 | Evidence-strength wording is deterministic and does not imply unsupported confidence. | Snapshot tests verify the same evidence class and phrasing for equivalent findings. |
 
 ## 7. Acceptance language
 

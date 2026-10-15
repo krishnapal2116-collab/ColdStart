@@ -105,6 +105,46 @@ These records make the technical direction explicit. They are proposed decisions
 **Rejected alternatives:** Marketplace/distributed plugins are P2 and need a separate trust model.
 **Reconsider if:** Multiple maintained adapters create a measured, documented need for a safe extension boundary.
 
+## ADR-011 — Evidence strength instead of confidence percentages
+
+**Context:** Users need to understand how strongly a finding is supported, but arbitrary confidence percentages would imply a statistical method that ColdStart does not have.
+**Options:** No evidence classification; percentage confidence; a small deterministic evidence-strength taxonomy.
+**Chosen:** Use `direct`, `derived`, `indicator`, `absence`, and `unverified`.
+**Rationale:** The classes are explainable, deterministic, and honest about the difference between observed facts, inferred relationships, suspicious patterns, missing evidence, and unavailable verification.
+**Consequences:** Every finding and report renderer must carry the class; wording and tests must remain consistent.
+**Rejected alternatives:** Percentages create false precision; no classification makes review harder.
+**Reconsider if:** A future evidence model can defend a more precise measure without weakening truthfulness.
+
+## ADR-012 — Audit fingerprint and baseline comparison
+
+**Context:** Reviewers need to know whether two reports describe the same evidence state and which findings changed over time.
+**Options:** Timestamp-only reports; full repository snapshots; a canonical bounded-evidence fingerprint with a later diff command.
+**Chosen:** Add a P0 `audit_fingerprint`; add baseline/diff comparison in P1.
+**Rationale:** A digest is local, privacy-preserving, deterministic, and useful without storing a repository copy. A diff view provides more value than a primary score.
+**Consequences:** Canonicalization and schema compatibility must be tested; a fingerprint still does not prove universal reproducibility.
+**Rejected alternatives:** Timestamps cannot identify evidence equivalence; full snapshots add privacy and storage cost.
+**Reconsider if:** A future signed artifact workflow needs stronger provenance.
+
+## ADR-013 — No static staging workspace
+
+**Context:** P0 is read-only and should minimize temporary-file and secret-persistence risk.
+**Options:** Stage every audit; use temporary files opportunistically; stage only explicitly authorized P1 execution.
+**Chosen:** P0 performs bounded in-place reads and creates no staging workspace; P1 may stage only after authorization.
+**Rationale:** This makes the safe default simpler and reduces cleanup and data-retention risk.
+**Consequences:** P0 cannot normalize the repository through a copied tree; P1 owns staging and cleanup controls.
+**Rejected alternatives:** Always staging would add complexity without improving static evidence.
+**Reconsider if:** A security review shows a required P0 parser cannot safely operate on bounded source paths.
+
+## ADR-014 — Advanced features are layered
+
+**Context:** The product can become more useful, but competition time is limited.
+**Options:** Implement every advanced feature before release; keep only the static core; layer a small number of evidence-preserving enhancements.
+**Chosen:** P0 gets evidence strength, fingerprinting, self-audit, and no staging. P1 gets baseline/diff, `explain`, policy profiles, and plan-only verification one at a time.
+**Rationale:** These features improve trust and usability without introducing AI, hosted infrastructure, or an uncontrolled plugin surface.
+**Consequences:** P1 features can be omitted if they threaten the P0 release gate.
+**Rejected alternatives:** AI fixes, dashboards, auto-modification, and universal language support are deferred as disproportionate to the MVP.
+**Reconsider if:** User research or competition requirements identify a higher-value feature with a bounded implementation cost.
+
 ## Approval note
 
-The highest-impact choices requiring owner confirmation are Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, no automatic execution, and P1 Docker verification.
+The highest-impact choices requiring owner confirmation are Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification.

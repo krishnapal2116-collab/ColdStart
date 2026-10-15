@@ -6,11 +6,12 @@
 
 ## 1. System overview
 
-ColdStart is a Python 3.12 command-line application. Its P0 core is a deterministic pipeline:
+ColdStart is a Python 3.12.8 command-line application. Its P0 core is a deterministic pipeline:
 
 ```text
 CLI input → boundary validation → bounded discovery → project detection
-→ applicability planning → static rules → normalized findings
+→ applicability planning → static rules → evidence classification
+→ fingerprint → normalized findings
 → policy/exit calculation → terminal or JSON report
 ```
 
@@ -67,7 +68,7 @@ sequenceDiagram
     Discovery-->>CLI: inventory and project candidates
     CLI->>Rules: evaluate applicable deterministic rules
     Rules-->>Policy: normalized findings
-    Policy-->>Report: status, score/decision, exit code
+    Policy-->>Report: status, decision, exit code
     Report-->>User: terminal and/or JSON result
     User->>CLI: optional P1 verify request
     CLI->>Runner: display plan and request explicit approval
@@ -87,11 +88,12 @@ sequenceDiagram
 7. Detect Python and generic project signals.
 8. Determine which checks apply and record the reason for every non-applicable check.
 9. Run P0 rules in stable check-ID order.
-10. Normalize and redact evidence.
-11. Evaluate policy and exit code.
-12. Render the requested output.
+10. Classify evidence strength and redact evidence.
+11. Calculate the audit fingerprint from canonical bounded inputs.
+12. Evaluate policy and exit code.
+13. Render the requested output.
 
-P0 never imports the target repository, runs `setup.py`, executes a package script, invokes a shell, installs dependencies, or starts a service.
+P0 never imports the target repository, runs `setup.py`, executes a package script, invokes a shell, installs dependencies, starts a service, or creates a repository staging copy.
 
 ## 5. Planned package and directory structure
 
@@ -101,7 +103,7 @@ This is an implementation target; it is not being created during the documentati
 src/coldstart/
 ├── cli/                 # argument parsing, help, command phases
 ├── config/              # .coldstart.toml parsing and validation
-├── boundary/            # path, symlink, limits, temporary ownership
+├── boundary/            # path, symlink, limits, P1 temporary ownership
 ├── discovery/           # file inventory and project signals
 ├── checks/              # check registry, applicability, P0 rule functions
 ├── findings/            # evidence, statuses, severity, normalization
@@ -124,7 +126,7 @@ tests/
 | --- | --- | --- |
 | `cli` | Parse and validate user intent, render help, select phases | Inspect project scripts directly or execute commands |
 | `config` | Parse bounded policy and defaults | Read secrets or silently enable execution |
-| `boundary` | Enforce root, symlink, size, time, and temporary-dir rules | Decide whether a project is reproducible |
+| `boundary` | Enforce root, symlink, size, time, and P1 temporary-dir rules | Decide whether a project is reproducible |
 | `discovery` | Inventory files and project signals | Import or execute repository code |
 | `checks` | Apply deterministic rule algorithms | Spawn processes or write the repository |
 | `findings` | Normalize statuses, evidence, remediation, and provenance | Decide policy exit codes from raw strings |
@@ -150,7 +152,9 @@ The implementation should use small typed data objects or protocols for:
 - `FileRecord`: relative path, kind, bounded size, digest/metadata, and read status;
 - `ProjectCandidate`: ecosystem, confidence, evidence, and adapter coverage;
 - `Applicability`: check ID, applicable/`not_applicable` state, reason, and adapter;
-- `Finding`: contract fields plus provenance;
+- `EvidenceStrength`: `direct`, `derived`, `indicator`, `absence`, or `unverified`;
+- `Finding`: contract fields, evidence strength, and provenance;
+- `AuditFingerprint`: canonical digest of bounded evidence, policy, tool version, and catalog version;
 - `ExecutionPlan`: kind, safe argv/build request, working directory, network/resource limits, and risk notice;
 - `ExecutionReceipt`: authorization, observed result, output truncation, cleanup, and manifest comparison;
 - `AuditReport`: metadata, project, checks, policy, verification, redaction, and summary.
@@ -186,20 +190,20 @@ Every transition preserves the rule ID and status. Policy may change the process
 2. Add project detection and applicability records.
 3. Add findings in deterministic order.
 4. Add policy and exit decision.
-5. Add verification state and receipts, if any.
+5. Add the audit fingerprint and verification state/receipts, if any.
 6. Apply final redaction and path normalization.
 7. Validate the in-memory contract.
 8. Serialize terminal or JSON output.
 
 ## 13. Configuration model
 
-The optional `.coldstart.toml` file controls policy, bounded limits, exclusions, output defaults, and P1 permissions. It does not contain credentials and cannot enable arbitrary shell execution. Invalid configuration fails closed before repository analysis. Command-line options override documented non-security display settings; security-sensitive execution settings require explicit confirmation.
+The optional `.coldstart.toml` file controls policy, bounded limits, exclusions, output defaults, and P1 permissions. P1 profiles (`beginner`, `strict`, and `ci`) are named policy presets, not alternate rule engines. It does not contain credentials and cannot enable arbitrary shell execution. Invalid configuration fails closed before repository analysis. Command-line options override documented non-security display settings; security-sensitive execution settings require explicit confirmation.
 
 ## 14. Dependency and runtime strategy
 
-The recommended P0 runtime uses Python 3.12 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling may use pinned `pytest` and `ruff`. A committed, hash-pinned dependency lockfile and a Dockerfile are release gates. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md` and are planned until implementation begins.
+The recommended P0 runtime uses Python 3.12.8 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling may use pinned `pytest` and `ruff`. A committed, hash-pinned dependency lockfile and a Dockerfile are release gates. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md` and are planned until implementation begins.
 
-The design avoids a general plugin marketplace. New checks are ordinary reviewed modules registered in one check catalog until the MVP demonstrates a need for a more extensible interface.
+The design avoids a general plugin marketplace. New checks are ordinary reviewed modules registered in one check catalog until the MVP demonstrates a need for a more extensible interface. A later `explain` command reads the same catalog metadata rather than introducing an AI explanation path.
 
 ## 15. Runtime compatibility
 
@@ -220,3 +224,11 @@ The static CLI targets pinned Python 3.12.8 on Linux, Windows, and macOS. The cl
 - Docker-based verification is safer than host execution but is slower and may be unavailable; that is why it is P1.
 - A small reviewed check registry is less extensible than a plugin framework but reduces attack surface and competition-schedule risk.
 - A versioned JSON contract requires upfront design but prevents CI consumers from depending on terminal text.
+
+## 18. Advanced improvement placement
+
+The advanced roadmap is deliberately layered:
+
+- P0 evidence strength, audit fingerprint, self-audit, and no static staging workspace strengthen trust without adding execution risk.
+- P1 baseline/diff, rule explanation, policy profiles, and plan-only verification improve maintainability and usability after the core is stable.
+- AI, hosted services, automatic changes, plugins, and universal language coverage remain out of scope because they add more complexity than user value for the competition MVP.

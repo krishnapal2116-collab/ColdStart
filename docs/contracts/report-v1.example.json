@@ -9,6 +9,7 @@
     "command": "audit",
     "format": "json",
     "strict": false,
+    "profile": null,
     "config_path": null,
     "limits": {
       "max_files": 10000,
@@ -22,6 +23,7 @@
       "external_symlinks": "not_followed",
       "exclusions": [".git", ".venv", "__pycache__"]
     },
+    "audit_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
     "scan_digest": null
   },
   "detection": {
@@ -66,7 +68,8 @@
         "reason": "Python project detected.",
         "adapter": "python"
       },
-      "rule_version": "1"
+      "rule_version": "1",
+      "evidence_strength": "direct"
     },
     {
       "check_id": "CS-DEPS-002",
@@ -94,7 +97,8 @@
         "reason": "The declared workflow supports a lockfile.",
         "adapter": "python"
       },
-      "rule_version": "1"
+      "rule_version": "1",
+      "evidence_strength": "absence"
     },
     {
       "check_id": "CS-BUILD-001",
@@ -120,7 +124,8 @@
         "reason": "Container verification is not claimed or required.",
         "adapter": "generic"
       },
-      "rule_version": "1"
+      "rule_version": "1",
+      "evidence_strength": "absence"
     },
     {
       "check_id": "CS-DOCS-002",
@@ -148,7 +153,8 @@
         "reason": "Test files or documentation indicate a test workflow.",
         "adapter": "python"
       },
-      "rule_version": "1"
+      "rule_version": "1",
+      "evidence_strength": "indicator"
     }
   ],
   "policy": {
