@@ -1,128 +1,180 @@
 {
   "schema_version": "1.0",
-  "report_id": "local-example-0001",
   "tool": {
     "name": "coldstart",
     "version": "0.1.0",
-    "build": "planning-example"
+    "catalog_version": "p0-1"
   },
-  "input": {
-    "project_root": ".",
-    "project_label": "example-app",
-    "options": {
-      "format": "json",
-      "network": "none"
-    },
-    "boundary": {
-      "symlinks": "do_not_follow_external",
-      "exclusions": [".git", "node_modules", ".venv"]
+  "invocation": {
+    "command": "audit",
+    "format": "json",
+    "strict": false,
+    "config_path": null,
+    "limits": {
+      "max_files": 10000,
+      "max_bytes": 50000000,
+      "max_seconds": 30
     }
   },
-  "project": {
-    "ecosystems": [
+  "repository": {
+    "label": "example-python",
+    "boundary": {
+      "external_symlinks": "not_followed",
+      "exclusions": [".git", ".venv", "__pycache__"]
+    },
+    "scan_digest": null
+  },
+  "detection": {
+    "candidates": [
       {
         "id": "python",
         "confidence": "high",
-        "evidence": ["pyproject.toml"]
+        "evidence": ["pyproject.toml", "src/"]
       }
     ],
-    "confidence": "high",
-    "adapter_coverage": {
-      "python": "full"
-    }
+    "applicability": [
+      {
+        "check_id": "CS-DEPS-002",
+        "applicable": true,
+        "reason": "The project declares a lockfile-capable Python workflow.",
+        "adapter": "python"
+      }
+    ]
   },
-  "checks": [
+  "findings": [
     {
-      "id": "runtime.python.version",
-      "version": "1",
-      "category": "runtime",
-      "title": "Pinned Python runtime",
-      "status": "passed",
+      "check_id": "CS-RUNTIME-001",
       "severity": "info",
-      "summary": "A pinned Python version was found.",
+      "status": "passed",
+      "title": "Runtime version declaration",
+      "message": "A consistent Python runtime declaration was found.",
       "evidence": [
         {
           "kind": "file",
           "path": ".python-version",
           "line_start": 1,
           "line_end": 1,
-          "detail": "A pinned runtime declaration is present.",
+          "detail": "The project declares a pinned Python runtime.",
           "digest": null
         }
       ],
-      "recommendations": [],
-      "adapter": "python"
+      "remediation": [],
+      "affected_path": ".python-version",
+      "category": "runtime",
+      "applicability": {
+        "applicable": true,
+        "reason": "Python project detected.",
+        "adapter": "python"
+      },
+      "rule_version": "1"
     },
     {
-      "id": "dependencies.lockfile",
-      "version": "1",
-      "category": "dependencies",
-      "title": "Dependency lockfile",
-      "status": "failed",
+      "check_id": "CS-DEPS-002",
       "severity": "error",
-      "summary": "No supported dependency lockfile was found.",
+      "status": "failed",
+      "title": "Applicable lockfile presence",
+      "message": "The selected Python dependency workflow has no matching lockfile.",
       "evidence": [
         {
           "kind": "absence",
           "path": null,
           "line_start": null,
           "line_end": null,
-          "detail": "Checked the project root and Python dependency metadata.",
+          "detail": "Checked declared Python dependency metadata and supported lockfile names.",
           "digest": null
         }
       ],
-      "recommendations": [
-        "Generate and commit the lockfile used by the documented setup command."
+      "remediation": [
+        "Generate and commit the lockfile used by the documented setup workflow."
       ],
-      "adapter": "python"
+      "affected_path": "pyproject.toml",
+      "category": "dependencies",
+      "applicability": {
+        "applicable": true,
+        "reason": "The declared workflow supports a lockfile.",
+        "adapter": "python"
+      },
+      "rule_version": "1"
     },
     {
-      "id": "verification.tests",
-      "version": "1",
-      "category": "execution",
-      "title": "Test verification",
-      "status": "not_verified",
-      "severity": "warning",
-      "summary": "The test command was identified but execution was not authorized.",
+      "check_id": "CS-BUILD-001",
+      "severity": "info",
+      "status": "not_applicable",
+      "title": "Container build configuration discovery",
+      "message": "No container workflow is claimed by this repository.",
       "evidence": [
         {
-          "kind": "policy",
+          "kind": "absence",
           "path": null,
           "line_start": null,
           "line_end": null,
-          "detail": "No test execution permission was granted.",
+          "detail": "No Docker workflow was found in the bounded inventory or documentation.",
           "digest": null
         }
       ],
-      "recommendations": [
-        "Review the proposed test plan and authorize verification when ready."
+      "remediation": null,
+      "affected_path": null,
+      "category": "build",
+      "applicability": {
+        "applicable": false,
+        "reason": "Container verification is not claimed or required.",
+        "adapter": "generic"
+      },
+      "rule_version": "1"
+    },
+    {
+      "check_id": "CS-DOCS-002",
+      "severity": "warning",
+      "status": "not_verified",
+      "title": "Test command documentation",
+      "message": "A test-like command was found, but its supporting metadata could not be confirmed statically.",
+      "evidence": [
+        {
+          "kind": "command",
+          "path": "README.md",
+          "line_start": 24,
+          "line_end": 24,
+          "detail": "The command contains an unsupported shell composition; it was not executed.",
+          "digest": null
+        }
       ],
-      "adapter": "generic"
+      "remediation": [
+        "Document one simple portable test command and declare its test dependency."
+      ],
+      "affected_path": "README.md",
+      "category": "documentation",
+      "applicability": {
+        "applicable": true,
+        "reason": "Test files or documentation indicate a test workflow.",
+        "adapter": "python"
+      },
+      "rule_version": "1"
     }
   ],
   "policy": {
     "name": "default",
-    "score": 65,
-    "violations": ["dependencies.lockfile"],
-    "decision": "fail"
+    "decision": "needs_attention",
+    "treat_not_verified_as": "review",
+    "violations": ["CS-DEPS-002"]
   },
   "verification": {
-    "requested": ["tests"],
+    "requested": [],
     "authorized": [],
     "executions": []
   },
   "redaction": {
     "mode": "default",
-    "secret_values_redacted": 0,
-    "omitted_fields": ["environment_values"]
+    "redacted_count": 0,
+    "omitted_fields": ["environment_values", "absolute_host_paths"]
   },
   "summary": {
     "overall": "needs_attention",
     "counts": {
       "passed": 1,
       "failed": 1,
-      "not_verified": 1,
+      "not_applicable": 1,
       "skipped": 0,
+      "not_verified": 1,
       "error": 0
     }
   }

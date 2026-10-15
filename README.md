@@ -1,48 +1,52 @@
 # ColdStart
 
-ColdStart is a local-first reproducibility readiness scanner and verifier. It helps a developer determine whether another person can recreate and run a software project without relying on undocumented local state.
+ColdStart is a local-first software-repository reproducibility auditor. It helps developers, maintainers, students, buildathon participants, small teams, and reviewers determine whether a Python repository contains enough evidence for another environment to recreate it.
 
 ## Current status
 
-**Planning only. Implementation is intentionally blocked pending explicit approval of the document pack and implementation plan.** This workspace currently contains no application source code, dependency manifest, executable, or runtime environment for ColdStart.
+**Documentation phase only. Application implementation is intentionally blocked pending explicit owner approval.** This workspace contains specifications and report-contract artifacts, but no ColdStart application source, dependency environment, executable, Dockerfile, or test suite.
 
-The approved planning boundary is:
+ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. Docker-based clean builds and offline test execution are P1 capabilities that require explicit authorization and are useful but not required for static audit usefulness.
 
-1. Inspect a supplied project path without executing project code.
-2. Identify the project type and reproducibility evidence.
-3. Report passed, failed, not-verified, and skipped checks with evidence.
-4. Suggest practical fixes.
-5. With explicit permission, verify supported tests and a clean Docker build.
-
-## Product definition
-
-> ColdStart is a safe, evidence-based tool that checks whether a software project can be recreated by someone else. It scans project files by default, explains missing or inconsistent reproducibility information, and—with explicit permission—verifies documented tests and clean builds in an isolated environment.
+ColdStart is a diagnostic tool, not a guarantee that a repository works on every computer.
 
 ## Document pack
 
-Read the documents in this order:
+The required implementation-start specification is:
 
-1. [Product definition](docs/01-product-definition.md)
-2. [Scope and requirements](docs/02-scope-and-requirements.md)
-3. [Architecture](docs/03-architecture.md)
-4. [Security, privacy, and threat model](docs/04-security-privacy-threat-model.md)
-5. [Interface and data contract](docs/05-interface-and-data-contract.md)
-6. [Audit rules and observability](docs/06-audit-rules-and-observability.md)
-7. [Failure modes and resilience](docs/07-failure-modes-and-resilience.md)
-8. [Verification strategy](docs/08-verification-strategy.md)
-9. [Requirements traceability](docs/09-requirements-traceability.md)
-10. [Implementation and approval plan](docs/10-implementation-and-approval-plan.md)
-11. [Documentation audit](docs/11-documentation-audit.md)
-12. [Decision log](docs/12-decision-log.md)
+1. [Project charter](docs/00_PROJECT_CHARTER.md)
+2. [Product requirements](docs/01_PRODUCT_REQUIREMENTS.md)
+3. [MVP scope and acceptance](docs/02_MVP_SCOPE_AND_ACCEPTANCE.md)
+4. [System architecture](docs/03_SYSTEM_ARCHITECTURE.md)
+5. [Threat model](docs/04_THREAT_MODEL.md)
+6. [Privacy and data handling](docs/05_PRIVACY_AND_DATA_HANDLING.md)
+7. [P0 check catalog](docs/06_CHECK_CATALOG.md)
+8. [CLI and report contracts](docs/07_CLI_AND_REPORT_CONTRACTS.md)
+9. [Requirement traceability](docs/08_REQUIREMENT_TRACEABILITY.md)
+10. [Test strategy](docs/09_TEST_STRATEGY.md)
+11. [Build and reproducibility](docs/10_BUILD_AND_REPRODUCIBILITY.md)
+12. [Architecture decisions](docs/11_ARCHITECTURE_DECISIONS.md)
+13. [Implementation and release plan](docs/12_IMPLEMENTATION_AND_RELEASE_PLAN.md)
+14. [Demo and submission plan](docs/13_DEMO_AND_SUBMISSION_PLAN.md)
+15. [Documentation quality audit](docs/14_DOCUMENTATION_AUDIT.md)
 
-## Recommended implementation baseline
+The machine-readable report contract is documented in `docs/07_CLI_AND_REPORT_CONTRACTS.md` and accompanied by:
 
-The specification recommends a cross-platform Python 3.12 CLI with a standard-library-first core, an adapter model for project ecosystems, terminal and versioned JSON reports, and Docker-backed execution for authorized verification. This is a proposal, not an implementation decision, until the owner approves the plan.
+- [Report JSON Schema](docs/contracts/report-v1.schema.json)
+- [Sanitized example report](docs/contracts/report-v1.example.json)
+
+## Proposed P0 command
+
+```text
+coldstart audit PATH --format terminal
+```
+
+The proposed P0 command inspects the selected local repository, reports applicable findings, and returns a documented exit code. The exact interface remains subject to owner approval and implementation verification.
 
 ## Safety promise
 
-ColdStart must be read-only by default. It must not install dependencies, run project commands, contact a network service, upload project contents, or modify the inspected project unless the user explicitly authorizes a clearly described operation. Findings must never claim that a test or build passed unless ColdStart actually ran it and recorded the result.
+Static inspection is read-only and non-executing by default. Every finding must identify its rule, status, severity, evidence or limitation, and remediation where appropriate. `not_applicable`, `skipped`, and `not_verified` are not passes. ColdStart must never claim tests or builds passed unless an authorized execution actually produced that evidence.
 
 ## Planning-phase checks
 
-No application test suite exists yet because implementation has not been approved. The planning deliverable is validated with documentation consistency review and `git diff --check`. The implementation plan requires a single offline `make test` command, a pinned runtime, a lockfile, a Dockerfile, and a README with exact setup, run, test, and deploy steps before application work is considered complete.
+No application test suite exists yet. The documentation phase is checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. The implementation plan requires a pinned Python runtime, hash-checked lockfiles, Dockerfile, offline `make test`, clean Linux rebuild, and exact README setup/run/test/build/deploy instructions before ColdStart itself can be declared reproducible.

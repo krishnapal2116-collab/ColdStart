@@ -1,137 +1,110 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:coldstart:report:1.0",
-  "title": "ColdStart Report Contract 1.0",
+  "title": "ColdStart Report Schema 1.0",
   "type": "object",
   "additionalProperties": true,
   "required": [
     "schema_version",
-    "report_id",
     "tool",
-    "input",
-    "project",
-    "checks",
+    "invocation",
+    "repository",
+    "detection",
+    "findings",
     "policy",
     "verification",
     "redaction",
     "summary"
   ],
   "properties": {
-    "schema_version": {
-      "const": "1.0"
-    },
-    "report_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "tool": {
-      "$ref": "#/$defs/tool"
-    },
-    "input": {
-      "$ref": "#/$defs/input"
-    },
-    "project": {
-      "$ref": "#/$defs/project"
-    },
-    "checks": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/check"
-      }
-    },
-    "policy": {
-      "$ref": "#/$defs/policy"
-    },
-    "verification": {
-      "$ref": "#/$defs/verification"
-    },
-    "redaction": {
-      "$ref": "#/$defs/redaction"
-    },
-    "summary": {
-      "$ref": "#/$defs/summary"
-    }
+    "schema_version": { "const": "1.0" },
+    "tool": { "$ref": "#/$defs/tool" },
+    "invocation": { "$ref": "#/$defs/invocation" },
+    "repository": { "$ref": "#/$defs/repository" },
+    "detection": { "$ref": "#/$defs/detection" },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "policy": { "$ref": "#/$defs/policy" },
+    "verification": { "$ref": "#/$defs/verification" },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "summary": { "$ref": "#/$defs/summary" }
   },
   "$defs": {
     "tool": {
       "type": "object",
-      "required": ["name", "version"],
+      "required": ["name", "version", "catalog_version"],
       "properties": {
-        "name": { "type": "string", "const": "coldstart" },
+        "name": { "const": "coldstart" },
         "version": { "type": "string", "minLength": 1 },
-        "build": { "type": "string" }
+        "catalog_version": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": true
     },
-    "input": {
+    "invocation": {
       "type": "object",
-      "required": ["project_root", "options", "boundary"],
+      "required": ["command", "format", "strict", "limits"],
       "properties": {
-        "project_root": { "type": "string", "minLength": 1 },
-        "project_label": { "type": "string" },
-        "options": { "type": "object", "additionalProperties": true },
-        "boundary": { "type": "object", "additionalProperties": true }
+        "command": { "type": "string" },
+        "format": { "enum": ["terminal", "json"] },
+        "strict": { "type": "boolean" },
+        "config_path": { "type": ["string", "null"] },
+        "limits": { "type": "object", "additionalProperties": true }
       },
       "additionalProperties": true
     },
-    "project": {
+    "repository": {
       "type": "object",
-      "required": ["ecosystems", "confidence", "adapter_coverage"],
+      "required": ["label", "boundary"],
       "properties": {
-        "ecosystems": { "type": "array" },
-        "confidence": { "type": "string" },
-        "adapter_coverage": { "type": "object", "additionalProperties": { "type": "string" } }
+        "label": { "type": "string", "minLength": 1 },
+        "boundary": { "type": "object", "additionalProperties": true },
+        "scan_digest": { "type": ["string", "null"] }
       },
       "additionalProperties": true
     },
-    "check": {
+    "detection": {
+      "type": "object",
+      "required": ["candidates", "applicability"],
+      "properties": {
+        "candidates": { "type": "array" },
+        "applicability": { "type": "array" }
+      },
+      "additionalProperties": true
+    },
+    "finding": {
       "type": "object",
       "required": [
-        "id",
-        "version",
-        "category",
-        "title",
-        "status",
+        "check_id",
         "severity",
-        "summary",
+        "status",
+        "title",
+        "message",
         "evidence",
-        "recommendations",
-        "adapter"
+        "remediation",
+        "affected_path",
+        "category",
+        "applicability",
+        "rule_version"
       ],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "version": { "type": "string", "minLength": 1 },
-        "category": {
-          "enum": ["project", "runtime", "dependencies", "documentation", "build", "portability", "execution", "security"]
-        },
+        "check_id": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error", "blocking"] },
+        "status": { "enum": ["passed", "failed", "not_applicable", "skipped", "not_verified", "error"] },
         "title": { "type": "string" },
-        "status": {
-          "enum": ["passed", "failed", "not_verified", "skipped", "error"]
-        },
-        "severity": {
-          "enum": ["info", "warning", "error", "blocking"]
-        },
-        "summary": { "type": "string" },
-        "evidence": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/$defs/evidence" }
-        },
-        "recommendations": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "adapter": { "type": "string" }
+        "message": { "type": "string" },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "remediation": { "type": ["array", "string", "null"] },
+        "affected_path": { "type": ["string", "null"] },
+        "category": { "enum": ["project", "dependencies", "runtime", "documentation", "configuration", "portability", "security", "build", "execution"] },
+        "applicability": { "$ref": "#/$defs/applicability" },
+        "rule_version": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": true
     },
     "evidence": {
       "type": "object",
-      "required": ["kind", "detail"],
+      "required": ["kind", "path", "detail"],
       "properties": {
-        "kind": {
-          "enum": ["file", "directory", "command", "metadata", "execution", "absence", "policy"]
-        },
+        "kind": { "enum": ["file", "directory", "metadata", "command", "absence", "execution", "policy", "error"] },
         "path": { "type": ["string", "null"] },
         "line_start": { "type": ["integer", "null"], "minimum": 1 },
         "line_end": { "type": ["integer", "null"], "minimum": 1 },
@@ -140,14 +113,24 @@
       },
       "additionalProperties": true
     },
+    "applicability": {
+      "type": "object",
+      "required": ["applicable", "reason", "adapter"],
+      "properties": {
+        "applicable": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "adapter": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "policy": {
       "type": "object",
-      "required": ["name", "violations", "decision"],
+      "required": ["name", "decision", "treat_not_verified_as", "violations"],
       "properties": {
         "name": { "type": "string" },
-        "score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-        "violations": { "type": "array", "items": { "type": "string" } },
-        "decision": { "enum": ["pass", "fail", "review"] }
+        "decision": { "enum": ["pass", "needs_attention", "incomplete", "error"] },
+        "treat_not_verified_as": { "enum": ["allow", "review", "fail"] },
+        "violations": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": true
     },
@@ -163,13 +146,13 @@
     },
     "execution": {
       "type": "object",
-      "required": ["execution_id", "kind", "authorization", "cleanup"],
+      "required": ["execution_id", "kind", "status", "authorization", "cleanup"],
       "properties": {
         "execution_id": { "type": "string" },
         "kind": { "enum": ["tests", "docker_build"] },
+        "status": { "type": "string" },
         "authorization": { "type": "string" },
         "cleanup": { "type": "string" },
-        "status": { "type": "string" },
         "exit_code": { "type": ["integer", "null"] },
         "network_mode": { "type": "string" }
       },
@@ -177,10 +160,10 @@
     },
     "redaction": {
       "type": "object",
-      "required": ["mode"],
+      "required": ["mode", "redacted_count"],
       "properties": {
         "mode": { "type": "string" },
-        "secret_values_redacted": { "type": "integer", "minimum": 0 },
+        "redacted_count": { "type": "integer", "minimum": 0 },
         "omitted_fields": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": true
@@ -189,15 +172,16 @@
       "type": "object",
       "required": ["overall", "counts"],
       "properties": {
-        "overall": { "enum": ["pass", "needs_attention", "not_verified", "error"] },
+        "overall": { "enum": ["pass", "needs_attention", "incomplete", "error"] },
         "counts": {
           "type": "object",
-          "required": ["passed", "failed", "not_verified", "skipped", "error"],
+          "required": ["passed", "failed", "not_applicable", "skipped", "not_verified", "error"],
           "properties": {
             "passed": { "type": "integer", "minimum": 0 },
             "failed": { "type": "integer", "minimum": 0 },
-            "not_verified": { "type": "integer", "minimum": 0 },
+            "not_applicable": { "type": "integer", "minimum": 0 },
             "skipped": { "type": "integer", "minimum": 0 },
+            "not_verified": { "type": "integer", "minimum": 0 },
             "error": { "type": "integer", "minimum": 0 }
           },
           "additionalProperties": true
