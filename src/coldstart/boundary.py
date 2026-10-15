@@ -1,8 +1,9 @@
 """Repository and output-boundary validation for the static audit.
 
-The repository under inspection is untrusted input.  M1 therefore validates the
-root directory and opens it only far enough to establish readability; it does
-not enumerate, import, parse, or execute project files.
+The repository under inspection is untrusted input.  Boundary validation keeps
+the root canonical and supplies the bounded, read-only rules used by M2
+discovery.  It never creates a staging copy and it never follows a repository
+symlink while inventory is collected.
 """
 
 from __future__ import annotations
@@ -15,7 +16,34 @@ from typing import Mapping, TypeAlias
 
 DEFAULT_MAX_FILES = 10_000
 DEFAULT_MAX_BYTES = 50_000_000
+DEFAULT_MAX_DEPTH = 32
 DEFAULT_MAX_SECONDS = 30
+
+# These upper bounds keep a malformed local policy from turning a static audit
+# into an effectively unbounded walk.  They are deliberately generous enough
+# for ordinary repositories while remaining representable by every supported
+# platform.
+MAX_ALLOWED_FILES = 1_000_000
+MAX_ALLOWED_BYTES = 2_000_000_000
+MAX_ALLOWED_DEPTH = 512
+MAX_ALLOWED_SECONDS = 3_600
+
+BUILTIN_EXCLUSIONS = (
+    ".git",
+    ".hg",
+    ".idea",
+    ".mypy_cache",
+    ".nox",
+    ".pytest_cache",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+)
 
 
 class BoundaryValidationError(ValueError):
@@ -71,17 +99,29 @@ class BoundaryLimits:
     max_files: int = DEFAULT_MAX_FILES
     max_bytes: int = DEFAULT_MAX_BYTES
     max_seconds: int = DEFAULT_MAX_SECONDS
+    max_depth: int = DEFAULT_MAX_DEPTH
 
     def __post_init__(self) -> None:
-        for name in ("max_files", "max_bytes", "max_seconds"):
+        maximums = {
+            "max_files": MAX_ALLOWED_FILES,
+            "max_bytes": MAX_ALLOWED_BYTES,
+            "max_depth": MAX_ALLOWED_DEPTH,
+            "max_seconds": MAX_ALLOWED_SECONDS,
+        }
+        for name, maximum in maximums.items():
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise BoundaryValidationError(f"{name} must be a positive integer")
+            if value > maximum:
+                raise BoundaryValidationError(
+                    f"{name} exceeds the safe maximum of {maximum}"
+                )
 
     def as_dict(self) -> dict[str, int]:
         return {
             "max_files": self.max_files,
             "max_bytes": self.max_bytes,
+            "max_depth": self.max_depth,
             "max_seconds": self.max_seconds,
         }
 
@@ -101,16 +141,80 @@ def validate_limits(values: BoundaryLimits | Mapping[str, object] | None) -> Bou
         return values
     if not isinstance(values, Mapping):
         raise BoundaryValidationError("limits must be a mapping")
+    # ``max_total_bytes`` is accepted as an API synonym, while the report and
+    # CLI use the shorter ``max_bytes`` spelling from the public contract.
+    max_bytes = values.get("max_bytes", values.get("max_total_bytes", DEFAULT_MAX_BYTES))
     try:
         return BoundaryLimits(
-            max_files=values["max_files"],  # type: ignore[arg-type]
-            max_bytes=values["max_bytes"],  # type: ignore[arg-type]
-            max_seconds=values["max_seconds"],  # type: ignore[arg-type]
+            max_files=values.get("max_files", DEFAULT_MAX_FILES),  # type: ignore[arg-type]
+            max_bytes=max_bytes,  # type: ignore[arg-type]
+            max_seconds=values.get("max_seconds", DEFAULT_MAX_SECONDS),  # type: ignore[arg-type]
+            max_depth=values.get("max_depth", DEFAULT_MAX_DEPTH),  # type: ignore[arg-type]
         )
-    except KeyError as error:
-        raise BoundaryValidationError(f"missing limit: {error.args[0]}") from error
     except TypeError as error:
         raise BoundaryValidationError("limits must contain integer values") from error
+
+
+def normalize_exclusion(value: object) -> str:
+    """Normalize one user exclusion and reject paths outside the boundary."""
+
+    if not isinstance(value, str) or not value.strip():
+        raise BoundaryValidationError("exclusions must contain non-empty strings")
+    normalized = value.replace("\\", "/").strip()
+    if normalized.startswith("/") or (
+        len(normalized) >= 2
+        and normalized[1] == ":"
+        and normalized[0].isalpha()
+    ):
+        raise BoundaryValidationError("exclusions must be repository-relative")
+    parts: list[str] = []
+    for part in normalized.split("/"):
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            raise BoundaryValidationError(
+                "exclusions cannot escape the repository boundary"
+            )
+        parts.append(part)
+    if not parts:
+        raise BoundaryValidationError("exclusions must identify a relative path")
+    return "/".join(parts)
+
+
+def normalize_exclusions(values: object | None) -> tuple[str, ...]:
+    """Return stable user exclusions; built-in exclusions are added separately."""
+
+    if values is None:
+        return ()
+    if isinstance(values, str) or not isinstance(values, (list, tuple, set, frozenset)):
+        raise BoundaryValidationError("exclusions must be a list of relative paths")
+    normalized = {normalize_exclusion(value) for value in values}
+    return tuple(sorted(normalized))
+
+
+def effective_exclusions(values: object | None = None) -> tuple[str, ...]:
+    """Combine immutable built-ins with validated user exclusions."""
+
+    return tuple(sorted(set(BUILTIN_EXCLUSIONS) | set(normalize_exclusions(values))))
+
+
+def is_excluded(relative_path: str, exclusions: tuple[str, ...]) -> bool:
+    """Return whether a normalized relative path is under an exclusion."""
+
+    normalized = relative_path.replace("\\", "/").strip("/")
+    if not normalized:
+        return False
+    parts = normalized.split("/")
+    for exclusion in exclusions:
+        exclusion_parts = exclusion.split("/")
+        # Built-ins name generated directories wherever they occur; explicit
+        # paths are exact prefixes and therefore remain useful for nested roots.
+        if exclusion in BUILTIN_EXCLUSIONS:
+            if exclusion in parts:
+                return True
+        elif parts[: len(exclusion_parts)] == exclusion_parts:
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -133,6 +237,7 @@ class RepositoryBoundary:
             "inspection": "root metadata only",
             "external_symlinks": self.external_symlinks,
             "exclusions": list(self.exclusions),
+            "staging": "none",
         }
 
 
@@ -140,6 +245,7 @@ def validate_repository(
     path: PathLike,
     *,
     limits: BoundaryLimits | Mapping[str, object] | None = None,
+    exclusions: object | None = None,
 ) -> RepositoryBoundary:
     """Validate an existing readable directory without reading project files."""
 
@@ -183,7 +289,12 @@ def validate_repository(
         ) from error
 
     label = safe_text(resolved.name or "repository", limit=80)
-    return RepositoryBoundary(root=resolved, label=label, limits=normalized_limits)
+    return RepositoryBoundary(
+        root=resolved,
+        label=label,
+        limits=normalized_limits,
+        exclusions=effective_exclusions(exclusions),
+    )
 
 
 def validate_output_path(path: PathLike | None) -> Path | None:
