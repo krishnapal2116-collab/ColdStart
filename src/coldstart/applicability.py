@@ -83,7 +83,9 @@ def plan_applicability(
     mixed = primary == "mixed" or (has_python and has_node)
     decisions: list[ApplicabilityDecision] = []
 
-    for entry in sorted(catalog, key=lambda item: item.check_id):
+    # The reviewed catalog order is itself stable and keeps the report aligned
+    # with the check catalog documentation.
+    for entry in catalog:
         if entry.check_id in excluded:
             decisions.append(
                 ApplicabilityDecision(

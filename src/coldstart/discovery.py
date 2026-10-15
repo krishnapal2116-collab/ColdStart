@@ -59,6 +59,14 @@ class FileRecord:
     external_symlink: bool = False
     symlink_target: str | None = None
 
+    @property
+    def path(self) -> str:
+        return self.relative_path
+
+    @property
+    def size_bytes(self) -> int | None:
+        return self.size
+
     def to_dict(self) -> dict[str, object]:
         return {
             "path": self.relative_path,
@@ -102,7 +110,7 @@ class InventoryResult:
 
     @property
     def file_count(self) -> int:
-        return len(self.records)
+        return self.regular_file_count
 
     @property
     def files(self) -> tuple[FileRecord, ...]:
@@ -111,7 +119,15 @@ class InventoryResult:
         return self.records
 
     @property
+    def paths(self) -> tuple[str, ...]:
+        return self.relative_paths
+
+    @property
     def byte_count(self) -> int:
+        return self.total_bytes
+
+    @property
+    def total_byte_count(self) -> int:
         return self.total_bytes
 
     @property
@@ -119,8 +135,16 @@ class InventoryResult:
         return sum(1 for record in self.records if record.kind == "file")
 
     @property
+    def entry_count(self) -> int:
+        return len(self.records)
+
+    @property
     def external_symlink_evidence(self) -> tuple[dict[str, str], ...]:
         return self.external_symlinks
+
+    @property
+    def stats(self) -> dict[str, object]:
+        return self.stats_dict()
 
     @property
     def incomplete(self) -> bool:
@@ -137,6 +161,7 @@ class InventoryResult:
     def stats_dict(self) -> dict[str, object]:
         return {
             "file_count": self.file_count,
+            "entry_count": self.entry_count,
             "regular_file_count": self.regular_file_count,
             "total_bytes": self.total_bytes,
             "max_depth_observed": self.max_depth_observed,
@@ -178,7 +203,13 @@ class DetectionCandidate:
             "id": self.id,
             "confidence": self.confidence,
             "evidence": list(self.evidence),
-            "signals": [dict(signal) for signal in self.signals],
+            "signals": [
+                {
+                    "id": signal.get("id"),
+                    "path": signal.get("path"),
+                }
+                for signal in self.signals
+            ],
         }
         if self.members:
             result["members"] = list(self.members)
@@ -193,14 +224,19 @@ class DetectionResult:
     primary: str
     metadata_inputs: tuple[dict[str, object], ...]
     metadata_errors: tuple[str, ...]
+    inventory_complete: bool = True
 
     @property
     def incomplete(self) -> bool:
-        return bool(self.metadata_errors)
+        return bool(self.metadata_errors) or not self.inventory_complete
 
     @property
     def project_type(self) -> str:
         return self.primary
+
+    @property
+    def fingerprint_inputs(self) -> tuple[dict[str, object], ...]:
+        return self.metadata_inputs
 
     @property
     def recognized_paths(self) -> tuple[str, ...]:
@@ -217,6 +253,7 @@ class DetectionResult:
             "primary": self.primary,
             "metadata_inputs": [dict(item) for item in self.metadata_inputs],
             "metadata_errors": list(self.metadata_errors),
+            "inventory_complete": self.inventory_complete,
             "status": "partial" if self.incomplete else "complete",
         }
 
@@ -290,13 +327,35 @@ def inventory_repository(
     *,
     limits: BoundaryLimits | dict[str, object] | None = None,
     excludes: Iterable[str] | None = None,
+    max_files: int | None = None,
+    max_bytes: int | None = None,
+    max_depth: int | None = None,
+    max_seconds: int | None = None,
 ) -> InventoryResult:
     """Collect a sorted bounded inventory without following any symlink."""
 
     repository_root = Path(root)
     if not repository_root.is_dir():
         raise BoundaryValidationError("inventory root is not a directory")
-    normalized_limits = validate_limits(limits)
+    if limits is None:
+        selected_limit_values: dict[str, object] = {}
+    elif isinstance(limits, BoundaryLimits):
+        selected_limit_values = limits.as_dict()
+    else:
+        selected_limit_values = dict(limits)
+    selected_limit_values.update(
+        {
+            key: value
+            for key, value in {
+                "max_files": max_files,
+                "max_bytes": max_bytes,
+                "max_depth": max_depth,
+                "max_seconds": max_seconds,
+            }.items()
+            if value is not None
+        }
+    )
+    normalized_limits = validate_limits(selected_limit_values or None)
     if isinstance(excludes, str):
         raise BoundaryValidationError("excludes must be an iterable of relative paths")
     user_exclusions = tuple(normalize_exclusion(value) for value in (excludes or ()))
@@ -410,6 +469,10 @@ def inventory_repository(
                 omission_reasons.append("unsupported_entry")
                 continue
 
+            if len(records) >= normalized_limits.max_files:
+                stop("file_limit")
+                break
+
             try:
                 size = entry.stat(follow_symlinks=False).st_size
                 if isinstance(size, bool) or not isinstance(size, int) or size < 0:
@@ -427,15 +490,8 @@ def inventory_repository(
                         readable=False,
                     )
                 )
-                if len(records) > normalized_limits.max_files:
-                    records.pop()
-                    stop("file_limit")
-                    break
                 continue
 
-            if len(records) >= normalized_limits.max_files:
-                stop("file_limit")
-                break
             if total_bytes + size > normalized_limits.max_bytes:
                 stop("byte_limit")
                 break
@@ -543,15 +599,22 @@ def _confidence(score: int) -> str:
     return "low"
 
 
-def detect_projects(root: Path | str, inventory: InventoryResult) -> DetectionResult:
+def detect_projects(
+    root: Path | str,
+    inventory: InventoryResult | None = None,
+) -> DetectionResult:
     """Detect Python, Node, unknown, or mixed signals deterministically."""
 
     repository_root = Path(root)
+    if inventory is None:
+        inventory = inventory_repository(repository_root)
     python_signals: list[dict[str, object]] = []
     node_signals: list[dict[str, object]] = []
     metadata_inputs: list[dict[str, object]] = []
     metadata_errors: list[str] = []
     for record in inventory.records:
+        if record.kind != "file":
+            continue
         signal = _metadata_signal(record.relative_path)
         if signal is not None:
             signal_id, weight = signal
@@ -649,6 +712,7 @@ def detect_projects(root: Path | str, inventory: InventoryResult) -> DetectionRe
         primary=primary,
         metadata_inputs=tuple(metadata_inputs),
         metadata_errors=tuple(metadata_errors),
+        inventory_complete=not inventory.incomplete,
     )
 
 

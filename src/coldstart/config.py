@@ -337,6 +337,8 @@ def load_config(
 
 parse_coldstart_config = parse_config
 load_policy = load_config
+PolicyConfig = ColdStartConfig
+parse_policy = parse_config
 
 
 __all__ = [
@@ -344,8 +346,10 @@ __all__ = [
     "CONFIG_MAX_BYTES",
     "ColdStartConfig",
     "ConfigValidationError",
+    "PolicyConfig",
     "load_config",
     "load_policy",
     "parse_config",
     "parse_coldstart_config",
+    "parse_policy",
 ]

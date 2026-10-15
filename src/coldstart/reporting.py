@@ -100,6 +100,7 @@ def render_terminal(
             f"bytes={int(inventory.get('total_bytes', 0))} "
             f"depth={int(inventory.get('max_depth_observed', 0))} "
             f"coverage={_terminal_text(inventory.get('coverage', 'unknown'))} "
+            f"omitted={int(inventory.get('omitted_count', 0))} "
             f"external_symlinks={int(inventory.get('external_symlink_count', 0))} "
             f"staging={_terminal_text(inventory.get('staging', 'unknown'))}"
         )
@@ -119,6 +120,13 @@ def render_terminal(
         lines.append(
             f"Applicability: {applicable_count}/{len(applicability)} catalog decisions applicable"
         )
+        decisions = ", ".join(
+            f"{_terminal_text(item.get('check_id', 'unknown'))}={_terminal_text(item.get('status', 'unknown'))}"
+            for item in applicability
+            if isinstance(item, Mapping)
+        )
+        if decisions:
+            lines.append(f"Applicability decisions: {decisions}")
     fingerprint_inputs = detection.get("fingerprint_inputs", {})
     if isinstance(fingerprint_inputs, Mapping):
         paths = fingerprint_inputs.get("paths", [])
@@ -128,6 +136,9 @@ def render_terminal(
             f"paths={len(paths) if isinstance(paths, list) else 0} "
             f"bounded_metadata={len(metadata) if isinstance(metadata, list) else 0}"
         )
+    audit_fingerprint = repository.get("audit_fingerprint")
+    if audit_fingerprint:
+        lines.append(f"Audit fingerprint: {_terminal_text(audit_fingerprint)}")
 
     raw_findings = value.get("findings", [])
     findings = [item for item in raw_findings if isinstance(item, Mapping)]

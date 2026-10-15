@@ -1,14 +1,34 @@
 """ColdStart package metadata and public version constants."""
 
 from .audit import AuditOptions, AuditResult, audit, run_audit
-from .applicability import ApplicabilityDecision, plan_applicability
-from .config import ColdStartConfig, ConfigValidationError, load_config, parse_config
+from .applicability import (
+    ApplicabilityDecision,
+    build_applicability,
+    decide_applicability,
+    plan_applicability,
+)
+from .config import (
+    ColdStartConfig,
+    ConfigValidationError,
+    PolicyConfig,
+    load_config,
+    load_policy,
+    parse_coldstart_config,
+    parse_config,
+    parse_policy,
+)
 from .discovery import (
     DetectionCandidate,
     DetectionResult,
+    FileInventory,
     FileRecord,
+    InventoryLimits,
     InventoryResult,
+    ProjectCandidate,
     detect_projects,
+    detect_project_types,
+    discover_inventory,
+    discover_repository,
     inventory_repository,
 )
 from .findings import (
@@ -41,14 +61,26 @@ __all__ = [
     "ConfigValidationError",
     "DetectionCandidate",
     "DetectionResult",
+    "FileInventory",
     "FileRecord",
     "Finding",
     "InventoryResult",
+    "InventoryLimits",
+    "ProjectCandidate",
+    "PolicyConfig",
     "audit",
+    "build_applicability",
+    "decide_applicability",
+    "detect_project_types",
     "detect_projects",
+    "discover_inventory",
+    "discover_repository",
     "inventory_repository",
     "load_config",
+    "load_policy",
+    "parse_coldstart_config",
     "parse_config",
+    "parse_policy",
     "plan_applicability",
     "run_audit",
 ]

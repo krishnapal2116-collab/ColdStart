@@ -127,7 +127,7 @@ CATALOG_BY_ID = {entry.check_id: entry for entry in CATALOG}
 
 
 def catalog_entries() -> tuple[CatalogEntry, ...]:
-    """Return catalog entries in their stable check-ID order."""
+    """Return catalog entries in the reviewed, stable catalog order."""
 
     return CATALOG
 
