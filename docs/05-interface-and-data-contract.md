@@ -97,6 +97,8 @@ The JSON report is an object with the following required top-level fields:
 | `redaction` | object | Redaction mode and counts, never secret values |
 | `summary` | object | Counts by status and severity plus overall result |
 
+The companion machine-readable artifacts are [the JSON Schema](contracts/report-v1.schema.json) and [a sanitized example report](contracts/report-v1.example.json). They are documentation artifacts and contain no project credentials or source code.
+
 ### Required invariants
 
 1. `checks` is present even when empty.
@@ -109,6 +111,8 @@ The JSON report is an object with the following required top-level fields:
 8. Any omitted capability appears in `verification` or a `not_verified` finding.
 9. JSON key order is stable for snapshot tests, although consumers must use names rather than order.
 10. Secret-shaped values and host identity are redacted before serialization.
+
+`summary.overall` is one of `pass`, `needs_attention`, `not_verified`, or `error`. It is a presentation of the normalized findings and policy result, not a replacement for individual check statuses.
 
 ## 5. Execution receipt contract
 

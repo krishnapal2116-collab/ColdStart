@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "report_id": "local-example-0001",
+  "tool": {
+    "name": "coldstart",
+    "version": "0.1.0",
+    "build": "planning-example"
+  },
+  "input": {
+    "project_root": ".",
+    "project_label": "example-app",
+    "options": {
+      "format": "json",
+      "network": "none"
+    },
+    "boundary": {
+      "symlinks": "do_not_follow_external",
+      "exclusions": [".git", "node_modules", ".venv"]
+    }
+  },
+  "project": {
+    "ecosystems": [
+      {
+        "id": "python",
+        "confidence": "high",
+        "evidence": ["pyproject.toml"]
+      }
+    ],
+    "confidence": "high",
+    "adapter_coverage": {
+      "python": "full"
+    }
+  },
+  "checks": [
+    {
+      "id": "runtime.python.version",
+      "version": "1",
+      "category": "runtime",
+      "title": "Pinned Python runtime",
+      "status": "passed",
+      "severity": "info",
+      "summary": "A pinned Python version was found.",
+      "evidence": [
+        {
+          "kind": "file",
+          "path": ".python-version",
+          "line_start": 1,
+          "line_end": 1,
+          "detail": "A pinned runtime declaration is present.",
+          "digest": null
+        }
+      ],
+      "recommendations": [],
+      "adapter": "python"
+    },
+    {
+      "id": "dependencies.lockfile",
+      "version": "1",
+      "category": "dependencies",
+      "title": "Dependency lockfile",
+      "status": "failed",
+      "severity": "error",
+      "summary": "No supported dependency lockfile was found.",
+      "evidence": [
+        {
+          "kind": "absence",
+          "path": null,
+          "line_start": null,
+          "line_end": null,
+          "detail": "Checked the project root and Python dependency metadata.",
+          "digest": null
+        }
+      ],
+      "recommendations": [
+        "Generate and commit the lockfile used by the documented setup command."
+      ],
+      "adapter": "python"
+    },
+    {
+      "id": "verification.tests",
+      "version": "1",
+      "category": "execution",
+      "title": "Test verification",
+      "status": "not_verified",
+      "severity": "warning",
+      "summary": "The test command was identified but execution was not authorized.",
+      "evidence": [
+        {
+          "kind": "policy",
+          "path": null,
+          "line_start": null,
+          "line_end": null,
+          "detail": "No test execution permission was granted.",
+          "digest": null
+        }
+      ],
+      "recommendations": [
+        "Review the proposed test plan and authorize verification when ready."
+      ],
+      "adapter": "generic"
+    }
+  ],
+  "policy": {
+    "name": "default",
+    "score": 65,
+    "violations": ["dependencies.lockfile"],
+    "decision": "fail"
+  },
+  "verification": {
+    "requested": ["tests"],
+    "authorized": [],
+    "executions": []
+  },
+  "redaction": {
+    "mode": "default",
+    "secret_values_redacted": 0,
+    "omitted_fields": ["environment_values"]
+  },
+  "summary": {
+    "overall": "needs_attention",
+    "counts": {
+      "passed": 1,
+      "failed": 1,
+      "not_verified": 1,
+      "skipped": 0,
+      "error": 0
+    }
+  }
+}
