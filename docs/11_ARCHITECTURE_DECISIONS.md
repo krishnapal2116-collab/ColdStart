@@ -3,7 +3,7 @@
 **Status:** Phase 0 design freeze recorded; implementation not started
 **Version:** 0.2
 
-These records make the technical direction explicit. Phase 0 freezes them as the baseline for Phase 1 planning; they are not evidence that application implementation has been approved or executed. Changes after implementation require a new record and affected test/documentation updates.
+These records make the technical direction explicit. Phase 0 froze them as the baseline for Phase 1. Phase 1 foundation implementation is now approved and present; the records are not evidence that the complete application works. Changes after implementation require a new record and affected test/documentation updates.
 
 ## ADR-001 — CLI-first product
 
@@ -147,4 +147,4 @@ These records make the technical direction explicit. Phase 0 freezes them as the
 
 ## Phase 0 freeze note
 
-The Phase 0 baseline freezes Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification. Terminology assumptions remain revisable before Phase 1. Explicit approval is still required before application source code is created.
+The Phase 0 baseline freezes Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification. The owner approved Phase 1, so the foundation package/toolchain has been created. Terminology assumptions remain revisable before later slices, and the static audit engine is not yet implemented.

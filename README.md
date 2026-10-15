@@ -4,7 +4,7 @@ ColdStart is a local-first software-repository reproducibility auditor. It helps
 
 ## Current status
 
-**Phase 0 design freeze is complete. Phase 1 application implementation has not started and remains blocked pending explicit implementation approval.** This workspace contains specifications and report-contract artifacts, but no ColdStart application source, dependency environment, executable, Dockerfile, or test suite.
+**Phase 0 design freeze is complete. Phase 1 foundation implementation is present; target-runtime, Make, and Docker verification remain environment gaps in the current workspace.** The static audit engine itself is still planned for the next implementation slice.
 
 ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. Docker-based clean builds and offline test execution are P1 capabilities that require explicit authorization and are useful but not required for static audit usefulness.
 
@@ -43,7 +43,29 @@ The advanced roadmap is intentionally layered: P0 adds evidence strength, determ
 coldstart audit PATH --format terminal
 ```
 
-The frozen P0 command will inspect the selected local repository, report applicable findings, and return a documented exit code. It has not been implemented or executed.
+The static audit engine behind this command will inspect the selected local repository, report applicable findings, and return a documented exit code. Phase 1 provides only the reserved truthful placeholder; the static audit engine has not been implemented yet.
+
+## Phase 1 foundation
+
+Phase 1 currently provides the package/toolchain foundation, help/version commands, a truthful reserved `audit` response, and an offline standard-library test suite. The `audit` command intentionally returns `not_verified` until the static audit engine is implemented in the next slice.
+
+Target setup requires Python 3.12.8:
+
+```text
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --require-hashes -r requirements-dev.lock
+.venv/bin/python -m pip install --no-deps -e .
+```
+
+The Phase 1 source-tree smoke commands are:
+
+```text
+PYTHONPATH=src python -m coldstart --help
+PYTHONPATH=src python -m coldstart version
+PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+`make test` is the canonical Linux command. Docker build/run and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
 
 ## Safety promise
 
@@ -51,4 +73,4 @@ Static inspection is read-only and non-executing by default. Every finding must 
 
 ## Phase 0 checks
 
-No application test suite exists yet. Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. Phase 1 still requires a pinned Python runtime, hash-checked lockfiles, Dockerfile, offline `make test`, clean Linux rebuild, and exact README setup/run/test/build/deploy instructions before ColdStart itself can be declared reproducible.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. Phase 1 source-tree tests have been added, but the current machine lacks Python 3.12.8, `make`, and Docker, so those target-environment checks remain unverified. ColdStart itself cannot be declared reproducible until those commands run successfully.

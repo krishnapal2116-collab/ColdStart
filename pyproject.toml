@@ -1,0 +1,21 @@
+[build-system]
+requires = []
+build-backend = "backend"
+backend-path = ["build_backend"]
+
+[project]
+name = "coldstart"
+version = "0.1.0"
+description = "A local-first software-repository reproducibility auditor."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Unspecified during Phase 1" }
+authors = [{ name = "ColdStart contributors" }]
+dependencies = []
+
+[project.scripts]
+coldstart = "coldstart.cli:main"
+
+[tool.coldstart]
+report-schema-version = "1.0"
+check-catalog-version = "p0-1"

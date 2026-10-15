@@ -1,8 +1,8 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 0 design freeze complete; Phase 1 awaiting explicit implementation approval
+**Status:** Phase 0 complete; Phase 1 foundation implemented, target verification pending
 **Version:** 0.2
-**Rule:** Phase 0 is documentation-only. No application source code may be created or modified until Phase 1 implementation is explicitly approved.
+**Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
 
@@ -21,7 +21,9 @@ Phase 0 has been executed as a documentation-only design freeze in response to t
 
 The existing terminology assumptions remain explicit: “save repositories” means accept and scan a local repository, and “Zone report with documented sigma” means the versioned JSON report. They can be revised before Phase 1 without changing the safety principle.
 
-Phase 0 completion does **not** mean that ColdStart builds, runs, or passes tests. It means that the implementation boundary and design baseline are recorded. The next action is Phase 1 only after explicit implementation approval.
+Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
+
+The owner has now approved Phase 1. The Phase 1 foundation files and standard-library test slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -30,6 +32,8 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 ## 3. Ordered milestones
 
 ### M0 — Reproducible repository foundation
+
+**Current state:** Foundation implementation present; target-runtime, Make, and Docker checks pending in a suitable environment.
 
 - **Goal:** Make the ColdStart repository itself buildable and testable.
 - **Requirements:** FR-017, NFR-009, NFR-011.

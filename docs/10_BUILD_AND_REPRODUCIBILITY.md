@@ -1,6 +1,6 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Planned commands; not yet executed
+**Status:** Phase 1 foundation commands documented; target-runtime/build verification pending
 **Version:** 0.2
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
@@ -30,7 +30,7 @@ The final image/tag availability and hashes must be checked during Phase 1. If t
 
 Use `pyproject.toml` for package metadata and a committed, hash-pinned `requirements.lock` for runtime/build dependencies plus `requirements-dev.lock` for test/lint tooling. The lockfiles are generated in a project virtual environment, reviewed, and installed with `--require-hashes`. No global package installation is part of the supported setup.
 
-The initial P0 runtime should have no third-party dependency beyond the approved packaging/runtime baseline where practical. `pytest` and `ruff` are development dependencies. Any new dependency requires:
+The Phase 1 foundation has no third-party runtime or development dependency: its smoke tests use `unittest` from the Python standard library, and its small PEP 517/660 backend is vendored under `build_backend/`. `pytest` and `ruff` remain optional future tooling, not hidden requirements. Any new dependency requires:
 
 1. a reason tied to a requirement;
 2. license and supply-chain review;
@@ -64,12 +64,10 @@ The exact commands below are the intended interface after implementation:
 
 ```text
 make test
-python -m pytest -q
-python -m ruff check .
-python -m ruff format --check .
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`make test` is the single canonical offline command. It must run the complete local suite and must not download packages or contact a service. The direct pytest command is documented for troubleshooting, not as a second competing standard.
+`make test` is the single canonical offline command. It runs the complete local suite with the standard library and must not download packages or contact a service. The direct `unittest` command is documented for troubleshooting, not as a second competing standard.
 
 ## 7. Docker build and run procedures
 
@@ -112,7 +110,7 @@ docker build --pull=false --tag coldstart:clean .
 docker run --rm --read-only --network none coldstart:clean --help
 ```
 
-Expected outcomes are a documented successful setup, passing offline tests, a successful ColdStart Docker build, and usable help output. These are future acceptance steps, not current results.
+Expected outcomes are a documented successful setup, passing offline tests, a successful ColdStart Docker build, and usable help output. The current development machine does not provide Python 3.12.8, Docker, or Make; those target checks remain unverified until run in a suitable environment.
 
 ## 10. Environment-variable policy
 
@@ -128,16 +126,35 @@ ColdStart P0 reads no required secret environment variables. Optional debug sett
 | Docker unavailable | Run P0 static tests; record P1 verification as unavailable rather than using host fallback |
 | Offline test tries network | Treat as a defect in ColdStart or a fixture; do not mark offline verification passed |
 | Report differs across runs | Compare normalized JSON, tool/schema/catalog versions, options, filesystem changes, and platform-specific evidence |
+| Phase 1 command is reserved | `coldstart audit PATH` returns `not_verified` until the static audit slice is implemented; this is intentional |
 
 ## 12. Release reproducibility checklist
 
-- [ ] Exact Python runtime is pinned.
-- [ ] Runtime and development lockfiles are committed and hash-checked.
-- [ ] Dockerfile and base image choice are documented.
-- [ ] `make test` works offline after setup.
+- [x] Exact Python runtime is declared in `.python-version`.
+- [x] Runtime and development lockfiles are committed; Phase 1 contains no third-party entries requiring hashes.
+- [x] Dockerfile and base image choice are documented.
+- [ ] `make test` works offline after setup; Make is unavailable in the current environment.
 - [ ] Clean Linux checkout instructions were actually run.
 - [ ] Docker build/run was actually run.
 - [ ] No global dependency is required by the instructions.
 - [ ] README setup/run/test/build/deploy/limitations steps match the implementation.
 - [ ] Actual output and exit codes are recorded.
 - [ ] No unsupported “fully reproducible everywhere” claim appears.
+
+## 13. Phase 1 verification record
+
+The following checks were actually run in the current workspace:
+
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` — passed under Python 3.14.7; this is not the pinned Python 3.12.8 acceptance environment.
+- `PYTHONPATH=src python -m coldstart --help` — passed under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart version` — passed under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart audit .` — returned the intentional reserved-command exit code `3` and reported `not_verified` without executing or modifying repository files.
+- `python -m pip wheel --no-deps --no-build-isolation .` — correctly refused the current Python 3.14.7 environment because the project requires `>=3.12,<3.13`; this is a real environment mismatch, not a passing build.
+- `python -m pip wheel --no-deps --no-build-isolation --ignore-requires-python . --wheel-dir <approved temporary directory>` — passed as a dependency-free backend smoke check; the override means this is not proof under Python 3.12.8.
+- `python -m compileall -q src build_backend tests` — passed under Python 3.14.7.
+
+The following target checks remain unverified because the current machine does not provide them:
+
+- Python 3.12.8 (`python3.12` and `py -3.12` were unavailable).
+- GNU Make (`make` was unavailable).
+- Docker (`docker` was unavailable).
