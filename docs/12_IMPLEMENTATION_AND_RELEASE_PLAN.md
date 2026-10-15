@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 2/M1 audit core implemented; target verification pending
-**Version:** 0.2
+**Status:** Phase 3/M2 discovery and applicability implemented; target verification pending
+**Version:** 0.3
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation and Phase 2/M1 audit core are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, and Phase 3/M2 discovery/applicability slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -63,18 +63,23 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M2 — Discovery and applicability
 
+**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
+
 - **Goal:** Build deterministic bounded inventory and Python/unknown/mixed detection.
 - **Requirements:** FR-003, FR-004, FR-012, FR-014, FR-015; NFR-005, NFR-006, NFR-007.
 - **Expected files/modules:** `discovery`, `config`, file-limit logic, fixture inventory cases.
 - **Dependencies:** M1.
 - **Tasks:** Add sorted inventory, limits, exclusions, symlink handling, TOML policy parsing, applicability decisions, and the invariant that P0 creates no staging workspace.
 - **Tests:** Large/malformed/unreadable/symlink/path fixtures, invalid config, repeated inventory, and P0 temporary-workspace observation.
-- **Acceptance:** Coverage limits and applicability are visible; no external symlink is followed.
+- **Acceptance:** Coverage limits and applicability are visible; no external symlink is followed; configured exclusions remain visible as `skipped` findings; incomplete coverage returns the documented incomplete result.
 - **Failure conditions:** Unbounded read, policy fail-open, or non-deterministic discovery.
-- **Git checkpoint:** `feat: add bounded discovery and applicability`.
+- **Git checkpoints:** `3df416c`, `ba420ab`, `fd60b9a`, `3264174`, `3548b8b`, and the integration repair `da7af22`.
+- **Verification:** The integrated offline suite has 31 passing tests with 2 platform-expected skips under Python 3.14.7; M2-specific coverage has 17 passing tests with 2 platform-expected skips.
 - **Relative effort:** Medium.
 
 ### M3 — Python P0 check slice
+
+**Next implementation slice:** M3 is the next planned step after the M2 closeout.
 
 - **Goal:** Implement the first half of the catalog: discovery, dependency, lockfile, runtime, and setup checks.
 - **Requirements:** FR-005, FR-008, FR-016; NFR-012.

@@ -1,7 +1,7 @@
 # ColdStart Test Strategy
 
-**Status:** Planned; no application tests have run
-**Version:** 0.2
+**Status:** M1/M2 tests implemented and passing in the available environment; catalog-rule tests remain planned
+**Version:** 0.3
 **Canonical command after implementation:** `make test`
 
 ## 1. Purpose and principles
@@ -165,4 +165,12 @@ Line/branch coverage measures which implementation paths tests visited; it does 
 
 ## 10. Current test status
 
-No application tests, builds, Docker runs, or `make test` command exist yet because implementation awaits owner approval. The documentation phase may validate Markdown, JSON contract artifacts, links, and consistency, but those checks are not ColdStart application tests.
+The current offline application suite is implemented and runs with the standard library. The latest command was:
+
+```text
+PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+It ran 33 tests under Python 3.14.7: 31 passed and 2 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. Compile checks also passed with `python -m compileall -q src build_backend tests`.
+
+The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and all P0 catalog-rule tests remain unverified or planned. These checks must not be inferred from the available Python 3.14.7 run.

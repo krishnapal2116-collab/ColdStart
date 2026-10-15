@@ -1,12 +1,12 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Phase 1 foundation commands documented; target-runtime/build verification pending
-**Version:** 0.2
+**Status:** Phase 3/M2 static discovery verified under the available interpreter; target-runtime/build verification pending
+**Version:** 0.3
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
 ## 1. Purpose
 
-ColdStart must reproduce itself before it asks other projects to reproduce. This document defines the intended runtime, dependencies, setup, test, Docker, and clean-checkout procedure. Commands are plans until implementation exists and OmniRush executes them; no command below is being claimed as passed.
+ColdStart must reproduce itself before it asks other projects to reproduce. This document defines the intended runtime, dependencies, setup, test, Docker, and clean-checkout procedure. Planned target-environment commands are not claims of success until OmniRush executes them; the verification record below distinguishes actual local checks from unavailable acceptance checks.
 
 ## 2. Supported operating systems
 
@@ -126,7 +126,7 @@ ColdStart P0 reads no required secret environment variables. Optional debug sett
 | Docker unavailable | Run P0 static tests; record P1 verification as unavailable rather than using host fallback |
 | Offline test tries network | Treat as a defect in ColdStart or a fixture; do not mark offline verification passed |
 | Report differs across runs | Compare normalized JSON, tool/schema/catalog versions, options, filesystem changes, and platform-specific evidence |
-| Phase 1 command is reserved | `coldstart audit PATH` returns `not_verified` until the static audit slice is implemented; this is intentional |
+| M2 catalog scope remains unevaluated | `coldstart audit PATH` performs bounded discovery and applicability planning, but P0 catalog rule findings remain `not_verified` until M3/M4 |
 
 ## 12. Release reproducibility checklist
 
@@ -141,18 +141,23 @@ ColdStart P0 reads no required secret environment variables. Optional debug sett
 - [ ] Actual output and exit codes are recorded.
 - [ ] No unsupported “fully reproducible everywhere” claim appears.
 
-## 13. Phase 1 verification record
+## 13. M1/M2 verification record
 
 The following checks were actually run in the current workspace:
 
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` — passed under Python 3.14.7; this is not the pinned Python 3.12.8 acceptance environment.
 - `PYTHONPATH=src python -m coldstart --help` — passed under Python 3.14.7.
 - `PYTHONPATH=src python -m coldstart version` — passed under Python 3.14.7.
-- `PYTHONPATH=src python -m coldstart audit .` — returned the intentional reserved-command exit code `3` and reported `not_verified` without executing or modifying repository files.
+- During M1, `PYTHONPATH=src python -m coldstart audit .` — returned the intentional reserved-command exit code `3` and reported `not_verified` without executing or modifying repository files; M2 now performs bounded discovery for the same command while keeping catalog rules `not_verified`.
 - `python -m pip wheel --no-deps --no-build-isolation .` — correctly refused the current Python 3.14.7 environment because the project requires `>=3.12,<3.13`; this is a real environment mismatch, not a passing build.
 - `python -m pip wheel --no-deps --no-build-isolation --ignore-requires-python . --wheel-dir <approved temporary directory>` — passed as a dependency-free backend smoke check; the override means this is not proof under Python 3.12.8.
 - `python -m compileall -q src build_backend tests` — passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M1 integration — 14 tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase3_m2_discovery -v` — 19 M2 tests passed with 2 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M2 integration — 31 tests passed with 2 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart audit . --format terminal` — exited `0`, reported a high-confidence Python candidate, bounded inventory with no staging, and explicit `not_verified` P0 catalog scope.
+- `python -m compileall -q src build_backend tests` after M2 integration — passed under Python 3.14.7.
+- `git diff --check` after M2 integration — passed.
 
 The following target checks remain unverified because the current machine does not provide them:
 

@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1 contract implemented; full P0 contract remains in progress
-**Version:** 0.2
+**Status:** M1/M2 contract implemented; full P0 catalog contract remains in progress
+**Version:** 0.3
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation
@@ -40,6 +40,7 @@ The P0 `audit` command never executes repository code. `verify` is a distinct co
 | `--no-color` | Disable terminal styling | auto based on TTY |
 | `--max-files N` | Bound file inventory | documented default |
 | `--max-bytes N` | Bound bytes read | documented default |
+| `--max-depth N` | Bound directory traversal depth | documented default |
 | `--max-seconds N` | Bound static audit time | documented default |
 | `--exclude PATH` | Add a relative exclusion inside the boundary | built-in generated-dir exclusions |
 
@@ -152,7 +153,7 @@ redaction
 summary
 ```
 
-`tool` contains name/version/catalog version. `invocation` contains safe options and boundary limits. `repository` contains a local label, scan-boundary summary, and required `audit_fingerprint`, not an absolute path by default. `detection` contains candidates and applicability. `policy` contains policy name, decision, configured unknown handling, and violations. `verification` contains requested/authorized/executed actions. `redaction` contains mode and counts, never values. `summary` contains counts by status/severity and overall decision.
+`tool` contains name/version/catalog version. `invocation` contains safe options and boundary limits. `repository` contains a local label, scan-boundary summary, and required `audit_fingerprint`, not an absolute path by default. `detection` contains candidates, bounded inventory statistics, the relative `file_inventory`, applicability decisions, detection limitations, and fingerprint inputs. `policy` contains policy name, decision, configured unknown handling, and violations. `verification` contains requested/authorized/executed actions. `redaction` contains mode and counts, never values. `summary` contains counts by status/severity and overall decision.
 
 ### Audit fingerprint
 

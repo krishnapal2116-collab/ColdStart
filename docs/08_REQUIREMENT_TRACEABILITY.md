@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** Specified, not implemented
-**Version:** 0.2
+**Status:** M1/M2 implemented and tested; later catalog slices remain specified
+**Version:** 0.3
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. `Specified/not implemented` is the current state for every row; documentation does not count as implementation evidence.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. The P0 catalog rule rows remain future work.
 
 ## 1. Functional requirements
 
@@ -84,7 +84,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 
 ## 4. State rule
 
-Every row above remains `specified/not implemented` until the implementation, appropriate tests, and actual command output exist. A future audit must replace the state with `implemented`, `tested`, `verified`, `deferred`, or `blocked` only with evidence.
+Every row above remains `specified/not implemented` unless the implementation, appropriate tests, and actual command output exist. A future audit must use `implemented`, `tested`, `verified`, `deferred`, or `blocked` only with evidence. The implementation-state sections below narrow that rule without claiming target-runtime, Make, Docker, or clean-Linux verification that has not run.
 
 ## 5. M1 implementation state
 
@@ -94,3 +94,13 @@ The following requirements now have implementation and test evidence in the M1 s
 - `NFR-001`, `NFR-002`, and `NFR-015` — implemented and tested under Python 3.14.7.
 
 The M1 evidence does not verify the pinned Python 3.12.8 environment, Make, Docker, or the later discovery/catalog requirements. Those remain explicitly unverified or specified-only until their corresponding commands and slices run.
+
+## 6. M2 implementation state
+
+The following requirements now have implementation and test evidence in the M2 slice:
+
+- `FR-003`, `FR-004`, `FR-012`, `FR-014`, and `FR-015` — bounded deterministic inventory, Python/Node/unknown/mixed detection, fail-closed `.coldstart.toml` policy parsing, read-only inventory, and no P0 staging workspace.
+- `NFR-005`, `NFR-006`, `NFR-007`, and `NFR-012` — partial-coverage findings, file/byte/depth/time bounds, exclusion and symlink handling, and report provenance for limits, policy, inventory, detection, applicability, and limitations.
+- M2 report behavior is covered by `tests/test_phase3_m2_discovery.py`: 19 tests, with 17 executed successfully and 2 platform-expected skips on the current Windows environment.
+
+The integrated offline command currently passes 31 executed tests with 2 platform-expected skips under Python 3.14.7. This does not implement the 13 P0 catalog rules: M2 only exposes their applicability decisions and keeps unevaluated catalog scope `not_verified`. Python 3.12.8, Make, Docker, and clean-Linux verification remain unverified.
