@@ -42,8 +42,10 @@ Confirm that the planning document pack is complete enough to begin implementati
 | Traceability | Review requirements group mappings and planned tests | Pass |
 | Approval gate | Confirm no implementation step is authorized implicitly | Pass |
 | Whitespace | `git diff --check` after each documentation change | Pass |
+| Committed whitespace | `git log --check --oneline --all` | Pass |
+| JSON contract artifacts | JSON syntax, required fields, and summary-count validation | Pass |
 | Secret hygiene | Review examples and reports for real credentials | Pass; examples use no credentials |
-| Link consistency | Review README links against the document list | Pass |
+| Link consistency | Validate all 14 local Markdown links | Pass |
 
 ## 4. Consistency decisions confirmed
 
