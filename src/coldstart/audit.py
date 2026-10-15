@@ -17,6 +17,7 @@ from .boundary import (
     validate_limits,
     validate_repository,
 )
+from .catalog import CATALOG_BY_ID
 from .config import ColdStartConfig, load_config
 from .discovery import DetectionResult, InventoryResult, detect_projects, inventory_repository
 from .findings import Applicability, AuditReport, Evidence, Finding
@@ -178,9 +179,12 @@ def _inventory_finding(
         evidence = tuple(evidence_items)
         strength = "direct"
     else:
-        status = "failed"
+        status = "not_verified"
         severity = "warning"
-        message = "The readable repository has no recognized Python or Node project metadata signal."
+        message = (
+            "The readable repository has no recognized Python or Node project metadata signal; "
+            "project metadata discovery remains not_verified."
+        )
         remediation = (
             "Add a supported project metadata file or document the repository's intended build ecosystem."
         )
@@ -189,7 +193,8 @@ def _inventory_finding(
                 kind="absence",
                 path=None,
                 detail=(
-                    "The complete bounded inventory contained no supported metadata or source suffix signal."
+                    "The complete bounded inventory contained no supported metadata or source suffix signal; "
+                    "this absence is not a build or test failure."
                 ),
             ),
         ]
@@ -323,6 +328,36 @@ def _detection_finding(
         ),
         rule_version="2",
         evidence_strength=strength,
+    )
+
+
+def _excluded_catalog_finding(decision: ApplicabilityDecision) -> Finding:
+    """Keep configured catalog exclusions visible without evaluating a rule."""
+
+    entry = CATALOG_BY_ID[decision.check_id]
+    return Finding(
+        check_id=entry.check_id,
+        severity=entry.severity,
+        status="skipped",
+        title=entry.name,
+        message=decision.reason,
+        evidence=(
+            Evidence(
+                kind="policy",
+                path=None,
+                detail="The configured policy excludes this catalog check; no rule logic was run.",
+            ),
+        ),
+        remediation="Remove this check from excluded_checks when its rule coverage is required.",
+        affected_path=None,
+        category=entry.category,
+        applicability=Applicability(
+            applicable=False,
+            reason=decision.reason,
+            adapter="policy",
+        ),
+        rule_version="2",
+        evidence_strength="direct",
     )
 
 
@@ -471,6 +506,11 @@ def run_audit(
             excluded="CS-PROJECT-002" in options.excluded_checks,
         ),
         _scope_finding(inventory),
+    ) + tuple(
+        _excluded_catalog_finding(decision)
+        for decision in applicability
+        if decision.status == "skipped"
+        and decision.check_id not in {"CS-PROJECT-001", "CS-PROJECT-002"}
     )
     policy_fingerprint_data = {
         "name": options.policy_name,
@@ -511,12 +551,15 @@ def run_audit(
     )
     scan_digest = hashlib.sha256(canonical_json(fingerprint_inputs).encode("utf-8")).hexdigest()
     detection_section = detection.to_dict()
-    if inventory.incomplete and detection_section.get("status") == "complete":
+    if inventory.incomplete:
         detection_section["status"] = "partial"
+    elif detection.primary == "mixed":
+        detection_section["status"] = "mixed"
     detection_section.update(
         {
             "applicability": [item.to_dict() for item in applicability],
             "inventory": inventory.stats_dict(),
+            "file_inventory": [record.to_dict() for record in inventory.records],
             "scope": "M2 bounded discovery and applicability",
             "limitations": [M2_LIMITATION]
             + (["Inventory coverage is partial; rerun after reviewing limits."] if inventory.incomplete else []),

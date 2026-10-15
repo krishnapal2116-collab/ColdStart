@@ -454,6 +454,7 @@ def inventory_repository(
                 child_depth = directory_depth + 1
                 max_depth_observed = max(max_depth_observed, child_depth)
                 if directory_depth >= normalized_limits.max_depth:
+                    truncated = True
                     omitted_count += 1
                     omission_reasons.append("depth_limit")
                 else:

@@ -7,6 +7,7 @@ paths, malformed values, and ambiguous aliases before discovery starts.
 
 from __future__ import annotations
 
+import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,7 @@ CONFIG_FILENAME = ".coldstart.toml"
 CONFIG_MAX_BYTES = 64 * 1024
 CONFIG_SCHEMA_VERSIONS = {"1", "1.0"}
 POLICY_NAMES = {"default", "strict", "beginner", "ci"}
+_POLICY_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 UNKNOWN_BEHAVIORS = {"allow", "review", "fail"}
 FAIL_ON_VALUES = {"info", "warning", "error", "blocking"}
 OUTPUT_FORMATS = {"terminal", "json"}
@@ -32,6 +34,13 @@ OUTPUT_FORMATS = {"terminal", "json"}
 
 class ConfigValidationError(BoundaryValidationError):
     """A local policy is absent, malformed, unsafe, or ambiguous."""
+
+
+def _validate_policy_name(value: object) -> None:
+    if not isinstance(value, str) or not _POLICY_NAME_PATTERN.fullmatch(value):
+        raise ConfigValidationError(
+            "policy name must be 1-64 characters using letters, numbers, '.', '_' or '-'"
+        )
 
 
 @dataclass(frozen=True)
@@ -54,8 +63,7 @@ class ColdStartConfig:
     def __post_init__(self) -> None:
         if self.schema_version not in CONFIG_SCHEMA_VERSIONS:
             raise ConfigValidationError("unsupported .coldstart.toml schema_version")
-        if self.name not in POLICY_NAMES:
-            raise ConfigValidationError("policy name is not supported")
+        _validate_policy_name(self.name)
         if not isinstance(self.strict, bool):
             raise ConfigValidationError("policy strict must be a boolean")
         if self.treat_not_verified_as not in UNKNOWN_BEHAVIORS:
@@ -225,8 +233,7 @@ def parse_config(text: str, *, source_path: str | None = None) -> ColdStartConfi
         raise ConfigValidationError("unsupported .coldstart.toml schema_version")
 
     name = _require_string(choose("name", "default"), "policy name")
-    if name not in POLICY_NAMES:
-        raise ConfigValidationError("policy name is not supported")
+    _validate_policy_name(name)
     strict = _require_bool(choose("strict", False), "strict")
     unknown_setting_present = "treat_not_verified_as" in raw or "treat_not_verified_as" in policy_values
     unknown_default = "fail" if strict else "review"
