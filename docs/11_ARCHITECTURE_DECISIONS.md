@@ -1,9 +1,9 @@
 # ColdStart Architecture Decisions
 
-**Status:** Proposed for approval
+**Status:** Phase 0 design freeze recorded; implementation not started
 **Version:** 0.2
 
-These records make the technical direction explicit. They are proposed decisions until the owner approves the documentation pack. Changes after implementation require a new record and affected test/documentation updates.
+These records make the technical direction explicit. Phase 0 freezes them as the baseline for Phase 1 planning; they are not evidence that application implementation has been approved or executed. Changes after implementation require a new record and affected test/documentation updates.
 
 ## ADR-001 — CLI-first product
 
@@ -49,7 +49,7 @@ These records make the technical direction explicit. They are proposed decisions
 
 **Context:** Auditing must not change the repository or silently generate project files.
 **Options:** Auto-fix; write caches into the repository; read-only with private temporary data.
-**Chosen:** Read-only repository, explicit output path, private temporary directory only.
+**Chosen:** Read-only repository, explicit output path, and private temporary directories only for P1 execution or explicitly bounded diagnostics.
 **Rationale:** It protects source integrity and makes before/after evidence meaningful.
 **Consequences:** Remediation is advisory; users apply fixes themselves.
 **Rejected alternatives:** Automatic modification is P2 and could destroy intent or hide the original defect.
@@ -145,6 +145,6 @@ These records make the technical direction explicit. They are proposed decisions
 **Rejected alternatives:** AI fixes, dashboards, auto-modification, and universal language support are deferred as disproportionate to the MVP.
 **Reconsider if:** User research or competition requirements identify a higher-value feature with a bounded implementation cost.
 
-## Approval note
+## Phase 0 freeze note
 
-The highest-impact choices requiring owner confirmation are Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification.
+The Phase 0 baseline freezes Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification. Terminology assumptions remain revisable before Phase 1. Explicit approval is still required before application source code is created.

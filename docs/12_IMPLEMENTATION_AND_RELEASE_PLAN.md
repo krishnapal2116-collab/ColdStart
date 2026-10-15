@@ -1,14 +1,33 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Awaiting explicit owner approval
+**Status:** Phase 0 design freeze complete; Phase 1 awaiting explicit implementation approval
 **Version:** 0.2
-**Rule:** No application source code may be created or modified until this plan and the document pack are explicitly approved.
+**Rule:** Phase 0 is documentation-only. No application source code may be created or modified until Phase 1 implementation is explicitly approved.
 
-## 1. Milestone method
+## 1. Phase 0 closeout
+
+Phase 0 has been executed as a documentation-only design freeze in response to the owner's instruction to implement Phase 0. The following baseline is frozen for Phase 1 planning:
+
+- Python 3.12.8 and a standard-library-first deterministic core;
+- CLI-first local operation with `coldstart audit PATH` as the P0 entry point;
+- Python-focused P0 scope and the 13-check catalog;
+- read-only, non-executing static audit;
+- evidence-strength classes and deterministic audit fingerprints;
+- no P0 repository staging workspace;
+- terminal and versioned JSON report contract;
+- P1-only Docker/test execution, explicit authorization, and plan-only preview;
+- P1 advanced improvements added one at a time only after P0 is stable;
+- local-only operation without a generative AI API or required network access.
+
+The existing terminology assumptions remain explicit: “save repositories” means accept and scan a local repository, and “Zone report with documented sigma” means the versioned JSON report. They can be revised before Phase 1 without changing the safety principle.
+
+Phase 0 completion does **not** mean that ColdStart builds, runs, or passes tests. It means that the implementation boundary and design baseline are recorded. The next action is Phase 1 only after explicit implementation approval.
+
+## 2. Milestone method
 
 Work proceeds in vertical slices. Each milestone ends with actual checks, documentation updates, and a focused Git checkpoint. A generated file or an intended test is not evidence of completion.
 
-## 2. Ordered milestones
+## 3. Ordered milestones
 
 ### M0 — Reproducible repository foundation
 
@@ -114,7 +133,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Git checkpoint:** `feat: add approved P1 enhancement`.
 - **Relative effort:** Small to large depending on choice; may be skipped.
 
-## 3. Release gates
+## 4. Release gates
 
 ### Gate G0 — Toolchain
 
@@ -138,6 +157,6 @@ Documentation, limitations, GitHub/README checklist, and demo use actual recorde
 
 P1 gates are additive and cannot waive a P0 gate.
 
-## 4. Time protection
+## 5. Time protection
 
 Reserve at least one implementation slice for integration and security fixes, one for clean-build verification, and one for documentation/demo review. If time becomes constrained, remove M6/M7 features before reducing P0 safety or evidence quality.
