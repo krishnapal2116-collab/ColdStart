@@ -141,6 +141,12 @@ def validate_limits(values: BoundaryLimits | Mapping[str, object] | None) -> Bou
         return values
     if not isinstance(values, Mapping):
         raise BoundaryValidationError("limits must be a mapping")
+    allowed_keys = {"max_files", "max_bytes", "max_total_bytes", "max_depth", "max_seconds"}
+    unknown_keys = sorted(
+        (str(key) for key in values if key not in allowed_keys),
+    )
+    if unknown_keys:
+        raise BoundaryValidationError(f"unsupported limit: {unknown_keys[0]}")
     # ``max_total_bytes`` is accepted as an API synonym, while the report and
     # CLI use the shorter ``max_bytes`` spelling from the public contract.
     max_bytes = values.get("max_bytes", values.get("max_total_bytes", DEFAULT_MAX_BYTES))
@@ -161,6 +167,8 @@ def normalize_exclusion(value: object) -> str:
     if not isinstance(value, str) or not value.strip():
         raise BoundaryValidationError("exclusions must contain non-empty strings")
     normalized = value.replace("\\", "/").strip()
+    if ":" in normalized:
+        raise BoundaryValidationError("exclusions cannot contain a drive or URL scheme")
     if normalized.startswith("/") or (
         len(normalized) >= 2
         and normalized[1] == ":"

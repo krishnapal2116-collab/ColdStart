@@ -48,8 +48,10 @@ def _candidate_ids(detection: DetectionResult | Mapping[str, object]) -> tuple[s
             candidate_id = candidate.get("id")
             if isinstance(candidate_id, str):
                 ids.add(candidate_id)
+                if candidate_id == "mixed":
+                    ids.update({"python", "node"})
             members = candidate.get("members")
-            if isinstance(members, list):
+            if isinstance(members, (list, tuple)):
                 ids.update(item for item in members if isinstance(item, str))
     return tuple(sorted(ids))
 
@@ -58,7 +60,9 @@ def _primary_id(detection: DetectionResult | Mapping[str, object]) -> str:
     if isinstance(detection, DetectionResult):
         return detection.primary
     primary = detection.get("primary")
-    return primary if isinstance(primary, str) else (_candidate_ids(detection) or ("unknown",))[0]
+    if isinstance(primary, str):
+        return primary
+    return (_candidate_ids(detection) or ("unknown",))[0]
 
 
 def plan_applicability(
@@ -71,6 +75,8 @@ def plan_applicability(
 
     candidate_ids = set(_candidate_ids(detection))
     primary = _primary_id(detection)
+    if primary == "mixed":
+        candidate_ids.update({"python", "node"})
     excluded = set(excluded_checks)
     has_python = "python" in candidate_ids
     has_node = "node" in candidate_ids

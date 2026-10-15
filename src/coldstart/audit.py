@@ -102,7 +102,37 @@ def _boundary_finding() -> Finding:
     )
 
 
-def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -> Finding:
+def _inventory_finding(
+    inventory: InventoryResult,
+    detection: DetectionResult,
+    *,
+    excluded: bool = False,
+) -> Finding:
+    if excluded:
+        return Finding(
+            check_id="CS-PROJECT-001",
+            severity="warning",
+            status="skipped",
+            title="Project metadata discovery",
+            message="The configured policy excludes project metadata discovery; no discovery rule was evaluated.",
+            evidence=(
+                Evidence(
+                    kind="policy",
+                    path=None,
+                    detail="The check is listed in excluded_checks in the active local policy.",
+                ),
+            ),
+            remediation="Remove the exclusion when project metadata coverage is required.",
+            affected_path=None,
+            category="project",
+            applicability=Applicability(
+                applicable=False,
+                reason="The active policy excludes this check.",
+                adapter="policy",
+            ),
+            rule_version="2",
+            evidence_strength="direct",
+        )
     recognized = detection.recognized_paths
     if inventory.incomplete:
         status = "not_verified"
@@ -129,14 +159,23 @@ def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -
         severity = "info"
         message = "Bounded inventory found recognizable project metadata or source signals."
         remediation = []
-        evidence = tuple(
+        evidence_items = [
             Evidence(
                 kind="metadata",
                 path=path,
                 detail="A deterministic inventory signal was discovered at this relative path.",
             )
             for path in recognized[:16]
+        ]
+        evidence_items.extend(
+            Evidence(
+                kind="metadata",
+                path=item["path"],
+                detail="An external symlink was recorded as evidence and was not followed.",
+            )
+            for item in inventory.external_symlinks[:8]
         )
+        evidence = tuple(evidence_items)
         strength = "direct"
     else:
         status = "failed"
@@ -145,7 +184,7 @@ def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -
         remediation = (
             "Add a supported project metadata file or document the repository's intended build ecosystem."
         )
-        evidence = (
+        evidence_items = [
             Evidence(
                 kind="absence",
                 path=None,
@@ -153,7 +192,16 @@ def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -
                     "The complete bounded inventory contained no supported metadata or source suffix signal."
                 ),
             ),
+        ]
+        evidence_items.extend(
+            Evidence(
+                kind="metadata",
+                path=item["path"],
+                detail="An external symlink was recorded as evidence and was not followed.",
+            )
+            for item in inventory.external_symlinks[:8]
         )
+        evidence = tuple(evidence_items)
         strength = "absence"
     return Finding(
         check_id="CS-PROJECT-001",
@@ -173,7 +221,37 @@ def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -
     )
 
 
-def _detection_finding(inventory: InventoryResult, detection: DetectionResult) -> Finding:
+def _detection_finding(
+    inventory: InventoryResult,
+    detection: DetectionResult,
+    *,
+    excluded: bool = False,
+) -> Finding:
+    if excluded:
+        return Finding(
+            check_id="CS-PROJECT-002",
+            severity="warning",
+            status="skipped",
+            title="Supported project type detection",
+            message="The configured policy excludes project-type detection; no detection rule was evaluated.",
+            evidence=(
+                Evidence(
+                    kind="policy",
+                    path=None,
+                    detail="The check is listed in excluded_checks in the active local policy.",
+                ),
+            ),
+            remediation="Remove the exclusion when deterministic project detection is required.",
+            affected_path=None,
+            category="project",
+            applicability=Applicability(
+                applicable=False,
+                reason="The active policy excludes this check.",
+                adapter="policy",
+            ),
+            rule_version="2",
+            evidence_strength="direct",
+        )
     candidate = detection.candidates[0]
     if inventory.incomplete or detection.incomplete:
         status = "not_verified"
@@ -382,8 +460,16 @@ def run_audit(
     )
     findings = (
         _boundary_finding(),
-        _inventory_finding(inventory, detection),
-        _detection_finding(inventory, detection),
+        _inventory_finding(
+            inventory,
+            detection,
+            excluded="CS-PROJECT-001" in options.excluded_checks,
+        ),
+        _detection_finding(
+            inventory,
+            detection,
+            excluded="CS-PROJECT-002" in options.excluded_checks,
+        ),
         _scope_finding(inventory),
     )
     policy_fingerprint_data = {
@@ -462,6 +548,9 @@ def run_audit(
             "boundary": {
                 **boundary.report_metadata(),
                 "inspection": "bounded metadata inventory",
+                "external_symlink_paths": [
+                    item["path"] for item in inventory.external_symlinks
+                ],
             },
             "audit_fingerprint": fingerprint,
             "scan_digest": scan_digest,

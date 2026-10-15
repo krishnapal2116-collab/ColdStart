@@ -105,6 +105,24 @@ class InventoryResult:
         return len(self.records)
 
     @property
+    def files(self) -> tuple[FileRecord, ...]:
+        """Compatibility name for callers treating the inventory as a file list."""
+
+        return self.records
+
+    @property
+    def byte_count(self) -> int:
+        return self.total_bytes
+
+    @property
+    def regular_file_count(self) -> int:
+        return sum(1 for record in self.records if record.kind == "file")
+
+    @property
+    def external_symlink_evidence(self) -> tuple[dict[str, str], ...]:
+        return self.external_symlinks
+
+    @property
     def incomplete(self) -> bool:
         return self.truncated or bool(self.unreadable_paths)
 
@@ -119,6 +137,7 @@ class InventoryResult:
     def stats_dict(self) -> dict[str, object]:
         return {
             "file_count": self.file_count,
+            "regular_file_count": self.regular_file_count,
             "total_bytes": self.total_bytes,
             "max_depth_observed": self.max_depth_observed,
             "omitted_count": self.omitted_count,
@@ -180,6 +199,10 @@ class DetectionResult:
         return bool(self.metadata_errors)
 
     @property
+    def project_type(self) -> str:
+        return self.primary
+
+    @property
     def recognized_paths(self) -> tuple[str, ...]:
         paths: set[str] = set()
         for candidate in self.candidates:
@@ -228,6 +251,40 @@ def _symlink_classification(root: Path, path: Path) -> tuple[bool, str]:
         return False, "unresolved-target"
 
 
+def _bounded_sorted_entries(
+    iterator: Iterable[os.DirEntry[str]],
+    *,
+    maximum: int,
+    deadline: float,
+) -> tuple[list[os.DirEntry[str]], int, bool]:
+    """Keep only the lexicographically earliest entries within a memory bound."""
+
+    selected: list[os.DirEntry[str]] = []
+    dropped = 0
+    timed_out = False
+    for entry in iterator:
+        if time.monotonic() >= deadline:
+            timed_out = True
+            break
+        key = (entry.name.casefold(), entry.name)
+        if len(selected) < maximum:
+            selected.append(entry)
+            continue
+        worst_index = max(
+            range(len(selected)),
+            key=lambda index: (selected[index].name.casefold(), selected[index].name),
+        )
+        worst = selected[worst_index]
+        worst_key = (worst.name.casefold(), worst.name)
+        if key < worst_key:
+            selected[worst_index] = entry
+            dropped += 1
+        else:
+            dropped += 1
+    selected.sort(key=lambda entry: (entry.name.casefold(), entry.name))
+    return selected, dropped, timed_out
+
+
 def inventory_repository(
     root: Path | str,
     *,
@@ -240,6 +297,8 @@ def inventory_repository(
     if not repository_root.is_dir():
         raise BoundaryValidationError("inventory root is not a directory")
     normalized_limits = validate_limits(limits)
+    if isinstance(excludes, str):
+        raise BoundaryValidationError("excludes must be an iterable of relative paths")
     user_exclusions = tuple(normalize_exclusion(value) for value in (excludes or ()))
     all_exclusions = effective_exclusions(user_exclusions)
     deadline = time.monotonic() + normalized_limits.max_seconds
@@ -269,9 +328,10 @@ def inventory_repository(
         current, directory_depth = directories.pop()
         try:
             with os.scandir(current) as iterator:
-                entries = sorted(
-                    list(iterator),
-                    key=lambda entry: (entry.name.casefold(), entry.name),
+                entries, dropped_entries, timed_out = _bounded_sorted_entries(
+                    iterator,
+                    maximum=max(1, normalized_limits.max_files + 1),
+                    deadline=deadline,
                 )
         except (OSError, PermissionError):
             relative_current = "." if current == repository_root else _relative(repository_root, current)
@@ -279,6 +339,14 @@ def inventory_repository(
             omitted_count += 1
             omission_reasons.append("unreadable_directory")
             continue
+
+        if dropped_entries:
+            truncated = True
+            omitted_count += dropped_entries
+            omission_reasons.append("directory_entry_limit")
+        if timed_out:
+            stop("time_limit")
+            break
 
         child_directories: list[tuple[Path, int]] = []
         for entry in entries:
@@ -529,7 +597,6 @@ def detect_projects(root: Path | str, inventory: InventoryResult) -> DetectionRe
 
     candidates: list[DetectionCandidate]
     if python_score and node_score:
-        mixed_score = min(python_score, node_score) + max(python_score, node_score)
         mixed_confidence = "high" if min(python_score, node_score) >= 3 else "medium"
         mixed = DetectionCandidate(
             id="mixed",
@@ -560,7 +627,6 @@ def detect_projects(root: Path | str, inventory: InventoryResult) -> DetectionRe
             candidate("node", node_score, node_signals),
         ]
         primary = "mixed"
-        del mixed_score  # The class is categorical; no numeric confidence is reported.
     elif python_score:
         candidates = [candidate("python", python_score, python_signals)]
         primary = "python"
