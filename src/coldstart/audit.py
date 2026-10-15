@@ -1,25 +1,36 @@
-"""M1 end-to-end static audit orchestration."""
+"""End-to-end bounded static audit orchestration for M2."""
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
-from typing import Mapping
+from pathlib import Path
+from typing import Mapping, Sequence
 
+from .applicability import ApplicabilityDecision, plan_applicability
 from .boundary import (
     BoundaryLimits,
     BoundaryValidationError,
     RepositoryBoundary,
+    effective_exclusions,
+    normalize_exclusions,
     validate_limits,
     validate_repository,
 )
+from .config import ColdStartConfig, load_config
+from .discovery import DetectionResult, InventoryResult, detect_projects, inventory_repository
 from .findings import Applicability, AuditReport, Evidence, Finding
-from .fingerprint import calculate_audit_fingerprint
+from .fingerprint import calculate_audit_fingerprint, canonical_json
 from .policy import PolicyResult, evaluate_policy
 from .version import CHECK_CATALOG_VERSION, REPORT_SCHEMA_VERSION, __version__
 
 
 M1_LIMITATION = (
-    "Project detection, ecosystem discovery, and P0 catalog checks are not implemented in M1."
+    "Project detection, ecosystem discovery, and P0 catalog checks were not implemented in M1."
+)
+M2_LIMITATION = (
+    "M2 implements bounded inventory, project detection, and catalog applicability planning; "
+    "P0 catalog rule logic remains outside this milestone."
 )
 
 
@@ -28,11 +39,21 @@ class AuditOptions:
     output_format: str = "terminal"
     strict: bool = False
     limits: BoundaryLimits = BoundaryLimits()
+    excludes: tuple[str, ...] = ()
+    config_path: str | None = None
+    policy_name: str = "default"
+    treat_not_verified_as: str = "review"
+    fail_on: str = "info"
+    required_checks: tuple[str, ...] = ()
+    excluded_checks: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.output_format not in {"terminal", "json"}:
             raise ValueError("output_format must be terminal or json")
         object.__setattr__(self, "limits", validate_limits(self.limits))
+        object.__setattr__(self, "excludes", normalize_exclusions(self.excludes))
+        if self.treat_not_verified_as not in {"allow", "review", "fail"}:
+            raise ValueError("treat_not_verified_as must be allow, review, or fail")
 
 
 @dataclass(frozen=True)
@@ -49,6 +70,10 @@ class AuditResult:
         return self.report.to_dict()
 
 
+def _generic_applicability(reason: str = "A bounded repository boundary is required for this discovery result.") -> Applicability:
+    return Applicability(applicable=True, reason=reason, adapter="generic")
+
+
 def _boundary_finding() -> Finding:
     return Finding(
         check_id="CS-BOUNDARY-001",
@@ -56,110 +81,366 @@ def _boundary_finding() -> Finding:
         status="passed",
         title="Repository boundary and readability",
         message=(
-            "The supplied repository boundary is an existing readable directory; "
-            "no project files were read or executed."
+            "The supplied repository boundary is an existing readable directory. "
+            "M2 uses a bounded, read-only inventory and never executes repository code."
         ),
         evidence=(
             Evidence(
                 kind="directory",
                 path=".",
-                detail="The audit opened the repository directory for bounded metadata validation.",
+                detail=(
+                    "The audit established a canonical readable root; no repository staging workspace was created."
+                ),
             ),
         ),
         remediation=[],
         affected_path=None,
         category="project",
-        applicability=Applicability(
-            applicable=True,
-            reason="A readable repository boundary is required for every audit.",
-            adapter="generic",
-        ),
-        rule_version="1",
+        applicability=_generic_applicability(),
+        rule_version="2",
         evidence_strength="direct",
     )
 
 
-def _m1_scope_finding() -> Finding:
-    return Finding(
-        check_id="CS-SCOPE-001",
-        severity="warning",
-        status="not_verified",
-        title="Static audit scope",
-        message=(
-            "The repository boundary was validated, but project discovery and "
-            "the P0 reproducibility catalog are not implemented in M1."
-        ),
-        evidence=(
+def _inventory_finding(inventory: InventoryResult, detection: DetectionResult) -> Finding:
+    recognized = detection.recognized_paths
+    if inventory.incomplete:
+        status = "not_verified"
+        severity = "warning"
+        message = (
+            "Bounded inventory coverage is incomplete; project metadata discovery cannot be reported as complete."
+        )
+        remediation: Sequence[str] | str | None = (
+            "Review the inventory limit evidence and rerun with a permitted bound that covers the repository."
+        )
+        evidence = (
+            Evidence(
+                kind="error",
+                path=None,
+                detail=(
+                    "Inventory coverage is partial: "
+                    + ", ".join(inventory.omission_reasons or ("unreadable entry",))
+                ),
+            ),
+        )
+        strength = "unverified"
+    elif recognized:
+        status = "passed"
+        severity = "info"
+        message = "Bounded inventory found recognizable project metadata or source signals."
+        remediation = []
+        evidence = tuple(
+            Evidence(
+                kind="metadata",
+                path=path,
+                detail="A deterministic inventory signal was discovered at this relative path.",
+            )
+            for path in recognized[:16]
+        )
+        strength = "direct"
+    else:
+        status = "failed"
+        severity = "warning"
+        message = "The readable repository has no recognized Python or Node project metadata signal."
+        remediation = (
+            "Add a supported project metadata file or document the repository's intended build ecosystem."
+        )
+        evidence = (
             Evidence(
                 kind="absence",
                 path=None,
-                detail="M1 intentionally performs root-boundary validation only.",
+                detail=(
+                    "The complete bounded inventory contained no supported metadata or source suffix signal."
+                ),
+            ),
+        )
+        strength = "absence"
+    return Finding(
+        check_id="CS-PROJECT-001",
+        severity=severity,
+        status=status,
+        title="Project metadata discovery",
+        message=message,
+        evidence=evidence,
+        remediation=remediation,
+        affected_path=recognized[0] if recognized else None,
+        category="project",
+        applicability=_generic_applicability(
+            "Bounded inventory is the precondition for project metadata discovery."
+        ),
+        rule_version="2",
+        evidence_strength=strength,
+    )
+
+
+def _detection_finding(inventory: InventoryResult, detection: DetectionResult) -> Finding:
+    candidate = detection.candidates[0]
+    if inventory.incomplete or detection.incomplete:
+        status = "not_verified"
+        severity = "warning"
+        message = "Project-type detection is limited because bounded metadata coverage is incomplete."
+        remediation: Sequence[str] | str | None = (
+            "Resolve the bounded inventory or metadata parse limitation and rerun detection."
+        )
+        strength = "unverified"
+    elif detection.primary == "mixed":
+        status = "not_verified"
+        severity = "warning"
+        message = (
+            "Both Python and Node signals were detected; ColdStart retained the mixed candidate instead of silently selecting one ecosystem."
+        )
+        remediation = (
+            "Document the intended audit root or supported workflows for each ecosystem before relying on ecosystem-specific results."
+        )
+        strength = "derived"
+    elif detection.primary == "unknown":
+        status = "not_verified"
+        severity = "warning"
+        message = "No supported Python or Node candidate reached a meaningful detection threshold."
+        remediation = (
+            "Add recognizable project metadata or use a repository layout supported by a future adapter."
+        )
+        strength = "absence"
+    elif candidate.confidence == "high":
+        status = "passed"
+        severity = "info"
+        message = (
+            f"A high-confidence {detection.primary} candidate was derived from bounded, non-executing signals."
+        )
+        remediation = []
+        strength = "derived"
+    else:
+        status = "not_verified"
+        severity = "warning"
+        message = (
+            f"A {candidate.confidence}-confidence {detection.primary} candidate was found, but the evidence is not sufficient for a high-confidence selection."
+        )
+        remediation = "Add unambiguous project metadata and rerun the audit."
+        strength = "indicator"
+
+    evidence = tuple(
+        Evidence(
+            kind="metadata" if candidate.evidence else "absence",
+            path=path if path else None,
+            detail=(
+                f"Signal evidence for the {candidate.id} candidate; confidence is categorical, not probabilistic."
+                if path
+                else candidate.reason
+            ),
+        )
+        for path in (candidate.evidence[:16] or (None,))
+    )
+    return Finding(
+        check_id="CS-PROJECT-002",
+        severity=severity,
+        status=status,
+        title="Supported project type detection",
+        message=message,
+        evidence=evidence,
+        remediation=remediation,
+        affected_path=candidate.evidence[0] if candidate.evidence else None,
+        category="project",
+        applicability=_generic_applicability(
+            "Project candidates are planned from bounded inventory signals."
+        ),
+        rule_version="2",
+        evidence_strength=strength,
+    )
+
+
+def _scope_finding(inventory: InventoryResult) -> Finding:
+    status = "not_verified" if not inventory.incomplete else "not_verified"
+    return Finding(
+        check_id="CS-SCOPE-001",
+        severity="warning",
+        status=status,
+        title="Static catalog scope",
+        message=(
+            "M1 reported that discovery was not implemented in M1 and no project files were read or executed; "
+            "M2 now provides bounded discovery and applicability decisions, while the P0 catalog rule logic remains outside this milestone."
+        ),
+        evidence=(
+            Evidence(
+                kind="metadata",
+                path=None,
+                detail=(
+                    "The report includes catalog applicability and discovery evidence only; no future check is represented as evaluated."
+                ),
             ),
         ),
         remediation=(
-            "Run a later ColdStart release with project discovery and the P0 "
-            "reproducibility checks enabled.",
+            "Use the discovery and applicability evidence as input to a later catalog-rule milestone; do not treat it as a build or test result."
         ),
         affected_path=None,
         category="project",
-        applicability=Applicability(
-            applicable=True,
-            reason="Every audit has an explicit implementation-scope result.",
-            adapter="generic",
+        applicability=_generic_applicability(
+            "Every audit reports the implementation scope explicitly."
         ),
-        rule_version="1",
+        rule_version="2",
         evidence_strength="unverified",
     )
+
+
+def _merge_limits(
+    configured: BoundaryLimits,
+    values: BoundaryLimits | Mapping[str, object] | None,
+    overrides: Mapping[str, object],
+) -> BoundaryLimits:
+    merged: dict[str, object] = configured.as_dict()
+    if isinstance(values, BoundaryLimits):
+        merged.update(values.as_dict())
+    elif values is not None:
+        if not isinstance(values, Mapping):
+            raise BoundaryValidationError("limits must be a mapping")
+        merged.update(values)
+    merged.update({key: value for key, value in overrides.items() if value is not None})
+    return validate_limits(merged)
+
+
+def _fingerprint_inputs(
+    inventory: InventoryResult,
+    detection: DetectionResult,
+    applicability: tuple[ApplicabilityDecision, ...],
+    policy: Mapping[str, object],
+) -> dict[str, object]:
+    return {
+        "paths": list(inventory.relative_paths),
+        "file_metadata": [
+            record.fingerprint_dict() for record in inventory.records
+        ],
+        "bounded_metadata": [dict(item) for item in detection.metadata_inputs],
+        "inventory": inventory.stats_dict(),
+        "detection": detection.to_dict(),
+        "applicability": [item.to_dict() for item in applicability],
+        "policy": dict(policy),
+    }
 
 
 def run_audit(
     repository_path: str,
     *,
-    output_format: str = "terminal",
+    output_format: str | None = "terminal",
     strict: bool = False,
     limits: BoundaryLimits | Mapping[str, object] | None = None,
+    config_path: str | None = None,
+    excludes: Sequence[str] | None = None,
+    max_files: int | None = None,
+    max_bytes: int | None = None,
+    max_depth: int | None = None,
+    max_seconds: int | None = None,
 ) -> AuditResult:
-    """Run the safe M1 audit and return one normalized report model.
+    """Run bounded static discovery and return one normalized report model."""
 
-    The only repository operation is root-boundary validation.  No project file
-    is imported, parsed, spawned, modified, or copied.
-    """
-
-    options = AuditOptions(
-        output_format=output_format,
-        strict=strict,
-        limits=validate_limits(limits),
+    # Root validation happens before config parsing and before any recursive
+    # operation.  It does not copy, stage, import, or execute repository data.
+    initial_boundary = validate_repository(repository_path)
+    config = load_config(initial_boundary.root, config_path)
+    selected_limits = _merge_limits(
+        config.limits,
+        limits,
+        {
+            "max_files": max_files,
+            "max_bytes": max_bytes,
+            "max_depth": max_depth,
+            "max_seconds": max_seconds,
+        },
     )
-    boundary = validate_repository(repository_path, limits=options.limits)
-    findings = (_boundary_finding(), _m1_scope_finding())
-    policy = evaluate_policy(findings, strict=options.strict)
+    cli_exclusions = normalize_exclusions(excludes)
+    selected_exclusions = effective_exclusions(tuple(config.excludes) + cli_exclusions)
+    boundary = RepositoryBoundary(
+        root=initial_boundary.root,
+        label=initial_boundary.label,
+        limits=selected_limits,
+        exclusions=selected_exclusions,
+    )
 
+    selected_format = output_format or config.output_format
+    effective_strict = bool(strict or config.strict)
+    unknown_behavior = "fail" if effective_strict else config.treat_not_verified_as
+    options = AuditOptions(
+        output_format=selected_format,
+        strict=effective_strict,
+        limits=selected_limits,
+        excludes=selected_exclusions,
+        config_path=config.source_path,
+        policy_name=config.name,
+        treat_not_verified_as=unknown_behavior,
+        fail_on=config.fail_on,
+        required_checks=config.required_checks,
+        excluded_checks=config.excluded_checks,
+    )
+
+    inventory = inventory_repository(
+        boundary.root,
+        limits=options.limits,
+        excludes=boundary.exclusions,
+    )
+    detection = detect_projects(boundary.root, inventory)
+    applicability = plan_applicability(
+        detection,
+        excluded_checks=options.excluded_checks,
+    )
+    findings = (
+        _boundary_finding(),
+        _inventory_finding(inventory, detection),
+        _detection_finding(inventory, detection),
+        _scope_finding(inventory),
+    )
     policy_fingerprint_data = {
-        "name": policy.name,
+        "name": options.policy_name,
         "strict": options.strict,
-        "treat_not_verified_as": policy.treat_not_verified_as,
+        "treat_not_verified_as": options.treat_not_verified_as,
+        "fail_on": options.fail_on,
+        "required_checks": list(options.required_checks),
+        "excluded_checks": list(options.excluded_checks),
+        "configured": config.configured,
     }
-    detection = {
-        "candidates": [],
-        "applicability": [],
-        "status": "not_implemented",
-        "scope": "M1 boundary/readability only",
-        "limitations": [M1_LIMITATION],
-    }
+    policy = evaluate_policy(
+        findings,
+        strict=options.strict,
+        name=options.policy_name,
+        treat_not_verified_as=options.treat_not_verified_as,
+        fail_on=options.fail_on,
+        incomplete=inventory.incomplete or detection.incomplete,
+        required_checks=options.required_checks,
+        excluded_checks=options.excluded_checks,
+    )
+    fingerprint_inputs = _fingerprint_inputs(
+        inventory,
+        detection,
+        applicability,
+        policy_fingerprint_data,
+    )
     fingerprint = calculate_audit_fingerprint(
         tool_version=__version__,
         catalog_version=CHECK_CATALOG_VERSION,
         policy=policy_fingerprint_data,
         limits=options.limits.as_dict(),
-        relative_paths=(".",),
-        metadata={
-            "external_symlinks": boundary.external_symlinks,
-            "readable": boundary.readable,
-            "root_kind": "directory",
+        relative_paths=inventory.relative_paths,
+        metadata=fingerprint_inputs,
+        detection={
+            "candidates": [candidate.to_dict() for candidate in detection.candidates],
+            "applicability": [item.to_dict() for item in applicability],
         },
-        detection={"candidates": [], "applicability": []},
     )
-
+    scan_digest = hashlib.sha256(canonical_json(fingerprint_inputs).encode("utf-8")).hexdigest()
+    detection_section = detection.to_dict()
+    if inventory.incomplete and detection_section.get("status") == "complete":
+        detection_section["status"] = "partial"
+    detection_section.update(
+        {
+            "applicability": [item.to_dict() for item in applicability],
+            "inventory": inventory.stats_dict(),
+            "scope": "M2 bounded discovery and applicability",
+            "limitations": [M2_LIMITATION]
+            + (["Inventory coverage is partial; rerun after reviewing limits."] if inventory.incomplete else []),
+            "fingerprint_inputs": {
+                "paths": list(inventory.relative_paths),
+                "bounded_metadata": [dict(item) for item in detection.metadata_inputs],
+                "applicability_count": len(applicability),
+            },
+        }
+    )
     report = AuditReport(
         schema_version=REPORT_SCHEMA_VERSION,
         tool={
@@ -171,17 +452,22 @@ def run_audit(
             "command": "audit",
             "format": options.output_format,
             "strict": options.strict,
-            "profile": None,
-            "config_path": None,
+            "profile": options.policy_name if options.policy_name != "default" else None,
+            "config_path": options.config_path,
             "limits": options.limits.as_dict(),
+            "excludes": list(options.excludes),
         },
         repository={
             "label": boundary.label,
-            "boundary": boundary.report_metadata(),
+            "boundary": {
+                **boundary.report_metadata(),
+                "inspection": "bounded metadata inventory",
+            },
             "audit_fingerprint": fingerprint,
-            "scan_digest": None,
+            "scan_digest": scan_digest,
+            "fingerprint_inputs": fingerprint_inputs,
         },
-        detection=detection,
+        detection=detection_section,
         findings=findings,
         policy=policy.to_dict(),
         verification={
@@ -193,14 +479,18 @@ def run_audit(
         redaction={
             "mode": "default",
             "redacted_count": 0,
-            "omitted_fields": ["absolute_host_paths", "environment_values"],
+            "omitted_fields": [
+                "absolute_host_paths",
+                "environment_values",
+                "unbounded_source_contents",
+            ],
         },
         summary=policy.summary(),
     )
     return AuditResult(report=report, policy=policy, boundary=boundary)
 
 
-# A concise alias for callers composing the CLI or a future API.
+# A concise alias for callers composing the CLI or future API layers.
 audit = run_audit
 
 
@@ -209,6 +499,7 @@ __all__ = [
     "AuditResult",
     "BoundaryValidationError",
     "M1_LIMITATION",
+    "M2_LIMITATION",
     "audit",
     "run_audit",
 ]

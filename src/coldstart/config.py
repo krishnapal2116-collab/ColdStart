@@ -7,7 +7,6 @@ paths, malformed values, and ambiguous aliases before discovery starts.
 
 from __future__ import annotations
 
-import os
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,7 +42,7 @@ class ColdStartConfig:
     name: str = "default"
     strict: bool = False
     treat_not_verified_as: str = "review"
-    fail_on: str = "error"
+    fail_on: str = "info"
     required_checks: tuple[str, ...] = ()
     excluded_checks: tuple[str, ...] = ()
     limits: BoundaryLimits = BoundaryLimits()
@@ -229,10 +228,14 @@ def parse_config(text: str, *, source_path: str | None = None) -> ColdStartConfi
     if name not in POLICY_NAMES:
         raise ConfigValidationError("policy name is not supported")
     strict = _require_bool(choose("strict", False), "strict")
+    unknown_setting_present = "treat_not_verified_as" in raw or "treat_not_verified_as" in policy_values
+    unknown_default = "fail" if strict else "review"
     unknown_behavior = _require_string(
-        choose("treat_not_verified_as", "review"), "treat_not_verified_as"
+        choose("treat_not_verified_as", unknown_default), "treat_not_verified_as"
     )
-    fail_on = _require_string(choose("fail_on", "error"), "fail_on")
+    if strict and not unknown_setting_present:
+        unknown_behavior = "fail"
+    fail_on = _require_string(choose("fail_on", "info"), "fail_on")
 
     required = _string_list(choose("required_checks", []), "required_checks")
     excluded_checks = _string_list(
@@ -252,6 +255,10 @@ def parse_config(text: str, *, source_path: str | None = None) -> ColdStartConfi
     if unknown_limits:
         raise ConfigValidationError(f"unsupported limit: {unknown_limits[0]}")
     limits_mapping = dict(limits_table)
+    if "max_bytes" in limits_mapping and "max_total_bytes" in limits_mapping:
+        raise ConfigValidationError(
+            "use only one of limits.max_bytes and limits.max_total_bytes"
+        )
     try:
         limits = validate_limits(limits_mapping)
     except BoundaryValidationError as error:
@@ -328,11 +335,17 @@ def load_config(
     return parse_config(_read_bounded(candidate), source_path=source_label)
 
 
+parse_coldstart_config = parse_config
+load_policy = load_config
+
+
 __all__ = [
     "CONFIG_FILENAME",
     "CONFIG_MAX_BYTES",
     "ColdStartConfig",
     "ConfigValidationError",
     "load_config",
+    "load_policy",
     "parse_config",
+    "parse_coldstart_config",
 ]

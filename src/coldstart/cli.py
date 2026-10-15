@@ -52,7 +52,19 @@ def build_parser() -> argparse.ArgumentParser:
     # parser below owns the post-command forms used in the documented examples.
     parser.add_argument("--format", dest="global_format", choices=("terminal", "json"))
     parser.add_argument("--output", dest="global_output", metavar="PATH")
-    parser.add_argument("--strict", dest="global_strict", action="store_true")
+    parser.add_argument("--config", dest="global_config", metavar="PATH")
+    parser.add_argument("--strict", dest="global_strict", action="store_true", default=None)
+    parser.add_argument("--max-files", dest="global_max_files", type=int, metavar="N")
+    parser.add_argument("--max-bytes", dest="global_max_bytes", type=int, metavar="N")
+    parser.add_argument("--max-depth", dest="global_max_depth", type=int, metavar="N")
+    parser.add_argument("--max-seconds", dest="global_max_seconds", type=int, metavar="N")
+    parser.add_argument(
+        "--exclude",
+        dest="global_excludes",
+        action="append",
+        metavar="PATH",
+        help="exclude a repository-relative path in addition to built-in exclusions",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     version_parser = subparsers.add_parser(
@@ -79,10 +91,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="write the selected report to an existing parent directory",
     )
     audit_parser.add_argument(
+        "--config",
+        dest="audit_config",
+        metavar="PATH",
+        default=None,
+        help="read a local .coldstart.toml policy (default: repository root if present)",
+    )
+    audit_parser.add_argument(
         "--strict",
         dest="audit_strict",
         action="store_true",
+        default=None,
         help="treat not-verified findings as policy failures",
+    )
+    audit_parser.add_argument("--max-files", dest="audit_max_files", type=int, metavar="N")
+    audit_parser.add_argument("--max-bytes", dest="audit_max_bytes", type=int, metavar="N")
+    audit_parser.add_argument("--max-depth", dest="audit_max_depth", type=int, metavar="N")
+    audit_parser.add_argument("--max-seconds", dest="audit_max_seconds", type=int, metavar="N")
+    audit_parser.add_argument(
+        "--exclude",
+        dest="audit_excludes",
+        action="append",
+        metavar="PATH",
+        help="exclude a repository-relative path in addition to built-in exclusions",
     )
     audit_parser.set_defaults(handler=_run_audit)
 
@@ -95,21 +126,50 @@ def _run_version(_args: argparse.Namespace) -> int:
 
 
 def _run_audit(args: argparse.Namespace) -> int:
-    """Compose validation, the M1 audit, and the requested serializer."""
+    """Compose validation, bounded M2 discovery, and the requested serializer."""
 
-    output_format = args.audit_format or args.global_format or "terminal"
+    output_format = args.audit_format or args.global_format
     output = args.audit_output or args.global_output
     strict = bool(args.audit_strict or args.global_strict)
+    config_path = args.audit_config or args.global_config
+    limits = {
+        "max_files": (
+            args.audit_max_files
+            if args.audit_max_files is not None
+            else args.global_max_files
+        ),
+        "max_bytes": (
+            args.audit_max_bytes
+            if args.audit_max_bytes is not None
+            else args.global_max_bytes
+        ),
+        "max_depth": (
+            args.audit_max_depth
+            if args.audit_max_depth is not None
+            else args.global_max_depth
+        ),
+        "max_seconds": (
+            args.audit_max_seconds
+            if args.audit_max_seconds is not None
+            else args.global_max_seconds
+        ),
+    }
+    limits = {name: value for name, value in limits.items() if value is not None}
+    excludes = list(args.global_excludes or ()) + list(args.audit_excludes or ())
     try:
         output_path = validate_output_path(output)
         result = run_audit(
             args.path,
             output_format=output_format,
             strict=strict,
+            config_path=config_path,
+            limits=limits or None,
+            excludes=excludes,
         )
+        selected_format = str(result.report.invocation.get("format", "terminal"))
         rendered = serialize_report(
             result.report,
-            output_format,
+            selected_format,
             exit_code=result.exit_code,
         )
         if output_path is None:

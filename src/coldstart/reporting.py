@@ -66,11 +66,20 @@ def render_terminal(
         exit_code = int(policy.get("exit_code", 0)) if isinstance(policy, Mapping) else 0
 
     candidates = detection.get("candidates", [])
-    if candidates and isinstance(candidates, list) and isinstance(candidates[0], Mapping):
-        candidate = candidates[0]
-        project_type = f"{_terminal_text(candidate.get('id', 'unknown'))} ({_terminal_text(candidate.get('confidence', 'unknown'))})"
+    primary = detection.get("primary")
+    candidate_records = [item for item in candidates if isinstance(item, Mapping)] if isinstance(candidates, list) else []
+    selected_candidate: Mapping[str, object] | None = None
+    if isinstance(primary, str):
+        selected_candidate = next(
+            (item for item in candidate_records if item.get("id") == primary),
+            None,
+        )
+    if selected_candidate is None and candidate_records:
+        selected_candidate = candidate_records[0]
+    if selected_candidate is not None:
+        project_type = f"{_terminal_text(selected_candidate.get('id', 'unknown'))} ({_terminal_text(selected_candidate.get('confidence', 'unknown'))})"
     else:
-        project_type = "unknown (M1 detection not implemented)"
+        project_type = "unknown (not verified)"
 
     lines = [
         f"ColdStart {_terminal_text(tool.get('version', 'unknown'))} | schema {_terminal_text(value.get('schema_version', 'unknown'))} | catalog {_terminal_text(tool.get('catalog_version', 'unknown'))}",
@@ -82,6 +91,43 @@ def render_terminal(
             for name in ("passed", "failed", "not_applicable", "skipped", "not_verified", "error")
         ),
     ]
+
+    inventory = detection.get("inventory", {})
+    if isinstance(inventory, Mapping):
+        lines.append(
+            "Inventory: "
+            f"files={int(inventory.get('file_count', 0))} "
+            f"bytes={int(inventory.get('total_bytes', 0))} "
+            f"depth={int(inventory.get('max_depth_observed', 0))} "
+            f"coverage={_terminal_text(inventory.get('coverage', 'unknown'))} "
+            f"external_symlinks={int(inventory.get('external_symlink_count', 0))} "
+            f"staging={_terminal_text(inventory.get('staging', 'unknown'))}"
+        )
+    if candidate_records:
+        candidate_labels = ", ".join(
+            f"{_terminal_text(item.get('id', 'unknown'))}:{_terminal_text(item.get('confidence', 'unknown'))}"
+            for item in candidate_records
+        )
+        lines.append(f"Candidates: {candidate_labels}")
+    applicability = detection.get("applicability", [])
+    if isinstance(applicability, list):
+        applicable_count = sum(
+            1
+            for item in applicability
+            if isinstance(item, Mapping) and item.get("applicable") is True
+        )
+        lines.append(
+            f"Applicability: {applicable_count}/{len(applicability)} catalog decisions applicable"
+        )
+    fingerprint_inputs = detection.get("fingerprint_inputs", {})
+    if isinstance(fingerprint_inputs, Mapping):
+        paths = fingerprint_inputs.get("paths", [])
+        metadata = fingerprint_inputs.get("bounded_metadata", [])
+        lines.append(
+            "Fingerprint inputs: "
+            f"paths={len(paths) if isinstance(paths, list) else 0} "
+            f"bounded_metadata={len(metadata) if isinstance(metadata, list) else 0}"
+        )
 
     raw_findings = value.get("findings", [])
     findings = [item for item in raw_findings if isinstance(item, Mapping)]
@@ -129,7 +175,16 @@ def render_terminal(
             lines.append(f"Limitations: {_terminal_text(limitation)}")
     else:
         lines.append("Limitations: none recorded")
-    lines.append("Next step: use a later release for project discovery and ecosystem checks.")
+    if any(
+        isinstance(item, Mapping)
+        and item.get("status") == "not_verified"
+        and item.get("check_id") in {"CS-PROJECT-001", "CS-PROJECT-002"}
+        for item in findings
+    ):
+        next_step = "review the discovery limitations and clarify the repository type before relying on ecosystem-specific checks."
+    else:
+        next_step = "review applicability decisions; the P0 catalog rule logic is outside this M2 audit scope."
+    lines.append(f"Next step: {next_step}")
     lines.append(f"Exit code: {exit_code}")
     return "\n".join(lines) + "\n"
 

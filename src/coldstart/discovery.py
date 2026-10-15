@@ -26,9 +26,6 @@ from .boundary import (
     normalize_exclusion,
     validate_limits,
 )
-from .fingerprint import canonical_json
-
-
 DETECTION_READ_LIMIT = 64 * 1024
 _PYTHON_METADATA = {
     "pyproject.toml": ("python-pyproject", 5),
@@ -199,6 +196,13 @@ class DetectionResult:
             "metadata_errors": list(self.metadata_errors),
             "status": "partial" if self.incomplete else "complete",
         }
+
+
+# Descriptive aliases keep the public M2 surface discoverable without creating
+# a second implementation or changing the report model.
+InventoryLimits = BoundaryLimits
+FileInventory = InventoryResult
+ProjectCandidate = DetectionCandidate
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -582,12 +586,23 @@ def detect_projects(root: Path | str, inventory: InventoryResult) -> DetectionRe
     )
 
 
+discover_inventory = inventory_repository
+discover_repository = inventory_repository
+detect_project_types = detect_projects
+
+
 __all__ = [
     "DETECTION_READ_LIMIT",
     "DetectionCandidate",
     "DetectionResult",
+    "FileInventory",
     "FileRecord",
+    "InventoryLimits",
     "InventoryResult",
+    "ProjectCandidate",
+    "detect_project_types",
     "detect_projects",
+    "discover_inventory",
+    "discover_repository",
     "inventory_repository",
 ]

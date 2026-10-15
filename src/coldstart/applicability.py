@@ -101,7 +101,7 @@ def plan_applicability(
             )
             continue
 
-        if "python" in entry.adapters and not has_python:
+        if entry.adapters == ("python",) and not has_python:
             if primary == "node":
                 reason = "No Python candidate was detected; the Python adapter does not apply to this Node project."
             elif primary == "unknown":
@@ -119,12 +119,16 @@ def plan_applicability(
             )
             continue
 
-        if has_python and mixed:
+        python_specific = entry.adapters == ("python",)
+        if python_specific and has_python and mixed:
             reason = "A Python candidate is present in a mixed repository; the Python adapter is applicable without selecting Node over it."
             adapter = "python"
-        elif has_python:
+        elif python_specific and has_python:
             reason = "A Python candidate was detected from bounded metadata signals."
             adapter = "python"
+        elif has_python:
+            reason = "Generic repository evidence applies to the detected Python candidate."
+            adapter = "generic"
         elif has_node:
             reason = "The generic adapter applies to the detected Node candidate; Python-specific rule logic is not applicable."
             adapter = "generic"
@@ -143,4 +147,13 @@ def plan_applicability(
     return tuple(decisions)
 
 
-__all__ = ["ApplicabilityDecision", "plan_applicability"]
+decide_applicability = plan_applicability
+build_applicability = plan_applicability
+
+
+__all__ = [
+    "ApplicabilityDecision",
+    "build_applicability",
+    "decide_applicability",
+    "plan_applicability",
+]
