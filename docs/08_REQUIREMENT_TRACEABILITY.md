@@ -85,3 +85,12 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 ## 4. State rule
 
 Every row above remains `specified/not implemented` until the implementation, appropriate tests, and actual command output exist. A future audit must replace the state with `implemented`, `tested`, `verified`, `deferred`, or `blocked` only with evidence.
+
+## 5. M1 implementation state
+
+The following requirements now have implementation and test evidence in the M1 slice:
+
+- `FR-001`, `FR-002`, `FR-006`, `FR-007`, `FR-009`, `FR-010`, `FR-011`, `FR-028`, and `FR-029` — implemented and tested under Python 3.14.7.
+- `NFR-001`, `NFR-002`, and `NFR-015` — implemented and tested under Python 3.14.7.
+
+The M1 evidence does not verify the pinned Python 3.12.8 environment, Make, Docker, or the later discovery/catalog requirements. Those remain explicitly unverified or specified-only until their corresponding commands and slices run.

@@ -4,7 +4,7 @@ ColdStart is a local-first software-repository reproducibility auditor. It helps
 
 ## Current status
 
-**Phase 0 design freeze is complete. Phase 1 foundation implementation is present; target-runtime, Make, and Docker verification remain environment gaps in the current workspace.** The static audit engine itself is still planned for the next implementation slice.
+**Phase 0 design freeze and Phase 2/M1 audit slice are complete.** The safe boundary/report core is implemented; target-runtime, Make, and Docker verification remain environment gaps in the current workspace. Ecosystem discovery and the P0 catalog checks are still planned for the next slice.
 
 ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. Docker-based clean builds and offline test execution are P1 capabilities that require explicit authorization and are useful but not required for static audit usefulness.
 
@@ -43,11 +43,11 @@ The advanced roadmap is intentionally layered: P0 adds evidence strength, determ
 coldstart audit PATH --format terminal
 ```
 
-The static audit engine behind this command will inspect the selected local repository, report applicable findings, and return a documented exit code. Phase 1 provides only the reserved truthful placeholder; the static audit engine has not been implemented yet.
+The M1 audit engine now validates the selected readable repository boundary, emits a deterministic terminal or JSON report, and returns a documented exit code. M1 intentionally does not inspect project files or run ecosystem checks.
 
 ## Phase 1 foundation
 
-Phase 1 currently provides the package/toolchain foundation, help/version commands, a truthful reserved `audit` response, and an offline standard-library test suite. The `audit` command intentionally returns `not_verified` until the static audit engine is implemented in the next slice.
+Phase 1 provides the package/toolchain foundation, help/version commands, and an offline standard-library test suite. Phase 2/M1 adds the safe `audit` report core, boundary validation, evidence strength, deterministic fingerprints, and terminal/JSON output. The report explicitly marks the not-yet-implemented discovery/catalog scope as `not_verified`.
 
 Target setup requires Python 3.12.8:
 
@@ -71,6 +71,6 @@ PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 
 Static inspection is read-only and non-executing by default. Every finding must identify its rule, status, severity, evidence or limitation, and remediation where appropriate. `not_applicable`, `skipped`, and `not_verified` are not passes. ColdStart must never claim tests or builds passed unless an authorized execution actually produced that evidence.
 
-## Phase 0 checks
+## Phase 0 and M1 checks
 
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. Phase 1 source-tree tests have been added, but the current machine lacks Python 3.12.8, `make`, and Docker, so those target-environment checks remain unverified. ColdStart itself cannot be declared reproducible until those commands run successfully.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1 has 14 passing offline integration/unit tests under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so those target-environment checks remain unverified. ColdStart itself cannot be declared reproducible until those commands run successfully.

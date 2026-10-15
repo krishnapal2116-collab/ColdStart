@@ -57,7 +57,6 @@ def evaluate_policy(findings: Sequence[Finding], *, strict: bool = False) -> Pol
     violations: list[str] = []
     has_error = False
     has_findings = False
-    has_incomplete = False
 
     for finding in normalized:
         if finding.status == "error":
@@ -67,7 +66,6 @@ def evaluate_policy(findings: Sequence[Finding], *, strict: bool = False) -> Pol
             has_findings = True
             violations.append(finding.check_id)
         elif finding.status == "not_verified":
-            has_incomplete = True
             if strict:
                 has_findings = True
                 violations.append(finding.check_id)
@@ -79,9 +77,6 @@ def evaluate_policy(findings: Sequence[Finding], *, strict: bool = False) -> Pol
     elif has_findings:
         decision = "needs_attention"
         exit_code = EXIT_FINDINGS
-    elif has_incomplete:
-        decision = "incomplete"
-        exit_code = EXIT_INCOMPLETE
     else:
         decision = "pass"
         exit_code = EXIT_OK

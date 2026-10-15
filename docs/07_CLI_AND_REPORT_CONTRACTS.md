@@ -1,6 +1,6 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** Proposed for approval
+**Status:** M1 contract implemented; full P0 contract remains in progress
 **Version:** 0.2
 **Report schema:** `1.0`
 

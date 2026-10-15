@@ -152,6 +152,7 @@ The following checks were actually run in the current workspace:
 - `python -m pip wheel --no-deps --no-build-isolation .` — correctly refused the current Python 3.14.7 environment because the project requires `>=3.12,<3.13`; this is a real environment mismatch, not a passing build.
 - `python -m pip wheel --no-deps --no-build-isolation --ignore-requires-python . --wheel-dir <approved temporary directory>` — passed as a dependency-free backend smoke check; the override means this is not proof under Python 3.12.8.
 - `python -m compileall -q src build_backend tests` — passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M1 integration — 14 tests passed under Python 3.14.7.
 
 The following target checks remain unverified because the current machine does not provide them:
 

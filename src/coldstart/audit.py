@@ -79,6 +79,39 @@ def _boundary_finding() -> Finding:
     )
 
 
+def _m1_scope_finding() -> Finding:
+    return Finding(
+        check_id="CS-SCOPE-001",
+        severity="warning",
+        status="not_verified",
+        title="Static audit scope",
+        message=(
+            "The repository boundary was validated, but project discovery and "
+            "the P0 reproducibility catalog are not implemented in M1."
+        ),
+        evidence=(
+            Evidence(
+                kind="absence",
+                path=None,
+                detail="M1 intentionally performs root-boundary validation only.",
+            ),
+        ),
+        remediation=(
+            "Run a later ColdStart release with project discovery and the P0 "
+            "reproducibility checks enabled.",
+        ),
+        affected_path=None,
+        category="project",
+        applicability=Applicability(
+            applicable=True,
+            reason="Every audit has an explicit implementation-scope result.",
+            adapter="generic",
+        ),
+        rule_version="1",
+        evidence_strength="unverified",
+    )
+
+
 def run_audit(
     repository_path: str,
     *,
@@ -98,7 +131,7 @@ def run_audit(
         limits=validate_limits(limits),
     )
     boundary = validate_repository(repository_path, limits=options.limits)
-    findings = (_boundary_finding(),)
+    findings = (_boundary_finding(), _m1_scope_finding())
     policy = evaluate_policy(findings, strict=options.strict)
 
     policy_fingerprint_data = {

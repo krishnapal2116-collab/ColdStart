@@ -147,4 +147,4 @@ These records make the technical direction explicit. Phase 0 froze them as the b
 
 ## Phase 0 freeze note
 
-The Phase 0 baseline freezes Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification. The owner approved Phase 1, so the foundation package/toolchain has been created. Terminology assumptions remain revisable before later slices, and the static audit engine is not yet implemented.
+The Phase 0 baseline freezes Python 3.12.8, P0 Python-only first-class support, local-only deterministic operation, evidence-strength classes, audit fingerprints, no P0 staging, no automatic execution, and P1 Docker verification. The owner approved implementation, so the foundation package/toolchain and M1 safe audit/report core have been created. Terminology assumptions remain revisable before later slices; ecosystem discovery and the P0 catalog remain future slices.

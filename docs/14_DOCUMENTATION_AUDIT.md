@@ -39,7 +39,7 @@ The following checks were run after the document pack was written:
 - Secret-pattern review: no real credential pattern was found. The catalog contains only intentional placeholder path examples such as `C:\Users\name\project` and `/home/name/project`.
 - Cross-document comparison: command names, statuses, exit codes, runtime target, P0/P1/P2 scope, advanced-improvement placement, and privacy/safety claims agree.
 - Phase 0 closeout reconciliation: README, implementation plan, architecture decisions, and audit all record the design freeze and the approved Phase 1 foundation while keeping later slices subject to their checks.
-- Phase 1 verification record: standard-library CLI tests, help/version smoke checks, the truthful reserved-audit behavior, compileall, and a dependency-free wheel smoke check were run under Python 3.14.7; Python 3.12.8, Make, and Docker remain unavailable.
+- Phase 1/M1 verification record: standard-library CLI tests, help/version smoke checks, boundary/report/fingerprint integration tests, safe non-execution checks, compileall, and a dependency-free wheel smoke check were run under Python 3.14.7; Python 3.12.8, Make, and Docker remain unavailable.
 
 ## 4. Quality review
 
@@ -72,10 +72,10 @@ The review found and handled these items:
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
 8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, profiles, and plan-only verification remain P1 and are explicitly optional.
-9. **Informational — Phase 1 foundation:** The design baseline is frozen and the approved foundation source/toolchain/test slice is present, but exact Python 3.12.8, Make, Docker, and clean-build evidence is unavailable on the current machine. The static audit engine remains unimplemented.
+9. **Informational — Phase 1/M1 implementation:** The design baseline, foundation, and smallest safe audit/report core are present. Exact Python 3.12.8, Make, Docker, and clean-build evidence is unavailable on the current machine; M2 discovery and P0 catalog checks remain unimplemented.
 
 No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize implementation.
 
 ## 6. Completion rule
 
-The documentation audit is complete for Phase 0 closeout and Phase 1 foundation review because all blocking contradictions were corrected, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. The static audit and full target-runtime/build gates remain future work and must not be reported as passed before actual execution.
+The documentation audit is complete for Phase 0 closeout and Phase 2/M1 review because all blocking contradictions were corrected, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. M2 discovery, the full P0 catalog, and target-runtime/build gates remain future work and must not be reported as passed before actual execution.

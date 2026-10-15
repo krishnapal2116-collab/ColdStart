@@ -1,6 +1,6 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 0 complete; Phase 1 foundation implemented, target verification pending
+**Status:** Phase 2/M1 audit core implemented; target verification pending
 **Version:** 0.2
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner has now approved Phase 1. The Phase 1 foundation files and standard-library test slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation and Phase 2/M1 audit core are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -47,6 +47,8 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Relative effort:** Medium.
 
 ### M1 — Smallest end-to-end static audit
+
+**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
 
 - **Goal:** `coldstart audit PATH` validates a directory and emits a truthful empty/minimal report.
 - **Requirements:** FR-001, FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-028, FR-029; NFR-001, NFR-002, NFR-015.

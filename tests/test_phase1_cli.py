@@ -63,9 +63,10 @@ class Phase1CliTests(unittest.TestCase):
 
             result = run_cli("audit", str(repository))
 
-        self.assertEqual(result.returncode, 3, result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Status: not_verified", result.stdout)
-        self.assertIn("not executed or modified", result.stdout)
+        self.assertIn("not implemented in M1", result.stdout)
+        self.assertIn("no project files were read or executed", result.stdout)
         self.assertFalse(marker.exists())
 
     def test_audit_rejects_a_missing_path(self) -> None:
