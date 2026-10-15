@@ -72,7 +72,7 @@ The report is versioned, deterministic apart from run metadata, safe to parse, a
 coldstart audit ./project --config .coldstart.toml --strict
 ```
 
-The configured policy decides whether failed or not-verified checks block the process. Skipped and not-applicable checks remain visible and are not counted as passes.
+The configured policy decides whether failed or `not_verified` checks block the process. `skipped` and `not_applicable` checks remain visible and are not counted as passes.
 
 ### Journey D — P1 verification (not required for P0)
 
@@ -107,7 +107,7 @@ Must contain, in stable order:
 4. Findings ordered by severity and check ID.
 5. Evidence and affected relative path.
 6. Remediation guidance.
-7. Not-applicable, skipped, and not-verified limitations.
+7. `not_applicable`, `skipped`, and `not_verified` limitations.
 8. Execution section, explicitly saying “not requested” for P0.
 9. Next action and process exit code.
 
@@ -178,7 +178,7 @@ Any open defect involving command execution, path escape, secret leakage, false 
 - [ ] `coldstart audit PATH` works on the clean fixture.
 - [ ] `coldstart audit PATH` catches the deliberate defect.
 - [ ] All findings cite evidence or an explicit limitation.
-- [ ] Not-applicable, skipped, and not-verified statuses are distinct.
+- [ ] `not_applicable`, `skipped`, and `not_verified` statuses are distinct.
 - [ ] JSON validates against the schema.
 - [ ] No AI API or network is required for P0.
 - [ ] The repository remains unchanged after a static audit.

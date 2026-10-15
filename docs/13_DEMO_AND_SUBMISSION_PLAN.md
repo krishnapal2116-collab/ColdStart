@@ -43,7 +43,7 @@ Sequence:
 5. Show the remediation guidance.
 6. Correct the fixture in a separate committed change or prepared branch.
 7. Re-run the actual command against `examples/clean-python` or the corrected fixture.
-8. Show that the findings changed, while any unexecuted test/Docker verification remains not verified.
+8. Show that the findings changed, while any unexecuted test/Docker verification remains `not_verified`.
 
 P1 optional segment, only if actually implemented and run:
 

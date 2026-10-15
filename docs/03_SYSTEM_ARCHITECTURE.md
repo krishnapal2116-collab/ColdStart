@@ -149,7 +149,7 @@ The implementation should use small typed data objects or protocols for:
 - `RepositoryBoundary`: canonical root label, exclusions, limits, and symlink policy;
 - `FileRecord`: relative path, kind, bounded size, digest/metadata, and read status;
 - `ProjectCandidate`: ecosystem, confidence, evidence, and adapter coverage;
-- `Applicability`: check ID, applicable/not-applicable state, reason, and adapter;
+- `Applicability`: check ID, applicable/`not_applicable` state, reason, and adapter;
 - `Finding`: contract fields plus provenance;
 - `ExecutionPlan`: kind, safe argv/build request, working directory, network/resource limits, and risk notice;
 - `ExecutionReceipt`: authorization, observed result, output truncation, cleanup, and manifest comparison;
@@ -203,7 +203,7 @@ The design avoids a general plugin marketplace. New checks are ordinary reviewed
 
 ## 15. Runtime compatibility
 
-The static CLI targets Python 3.12 on Linux, Windows, and macOS. The clean Linux build is the competition release baseline. Docker is optional for P0 and required only for the P1 verification path. Platform-specific filesystem differences are normalized and covered by tests rather than hidden.
+The static CLI targets pinned Python 3.12.8 on Linux, Windows, and macOS. The clean Linux build is the competition release baseline. Docker is optional for P0 and required only for the P1 verification path. Platform-specific filesystem differences are normalized and covered by tests rather than hidden.
 
 ## 16. Testability considerations
 

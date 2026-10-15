@@ -107,4 +107,4 @@ The implementation must include tests for:
 
 ## 8. Residual-risk policy
 
-ColdStart reports remaining limitations instead of hiding them. If a capability is missing, permission is denied, Docker is unavailable, a check is not applicable, or coverage is incomplete, the result says so. The product cannot guarantee every external environment, service, dependency mirror, operating-system behavior, or Docker daemon state.
+ColdStart reports remaining limitations instead of hiding them. If a capability is missing, permission is denied, Docker is unavailable, a check is `not_applicable`, or coverage is incomplete, the result says so. The product cannot guarantee every external environment, service, dependency mirror, operating-system behavior, or Docker daemon state.

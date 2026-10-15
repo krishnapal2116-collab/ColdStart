@@ -84,7 +84,7 @@
 | NFR-002 | P0 | Safety: default static auditing cannot execute project commands or mutate the inspected repository. | Security tests instrument subprocess and filesystem behavior; no project execution occurs. |
 | NFR-003 | P0 | Privacy: default operation keeps repository data local and redacts secrets from reports. | Network-disabled tests and redaction fixtures show no upload or secret value in output. |
 | NFR-004 | P0 | Offline operation: the P0 audit and its tests do not require a network service. | `make test` and representative audits run with network disabled after setup. |
-| NFR-005 | P0 | Reliability: isolated parser/file failures yield partial, truthful results rather than false passes. | Malformed and unreadable fixtures produce bounded error/not-verified findings and continue. |
+| NFR-005 | P0 | Reliability: isolated parser/file failures yield partial, truthful results rather than false passes. | Malformed and unreadable fixtures produce bounded error/`not_verified` findings and continue. |
 | NFR-006 | P0 | Resource safety: file, byte, depth, time, output, and temporary-storage limits are bounded. | Limit fixtures terminate within configured budgets and record incomplete coverage. |
 | NFR-007 | P0 | Portability: the static CLI supports the documented Python 3.12 environments on Linux, Windows, and macOS where filesystem behavior permits. | Cross-platform path/line-ending tests pass in the supported matrix. |
 | NFR-008 | P0 | CLI accessibility: terminal output is understandable without color, is safe for screen readers, and keeps meaning in plain text. | No-color/redirected-output snapshots retain headings, statuses, evidence, and remediation. |

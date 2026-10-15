@@ -79,7 +79,7 @@ Help is plain text, available without a repository, and includes safe examples. 
 | `3` | `INCOMPLETE` | Audit coverage or an explicitly requested verification could not complete due to limits, denial, unavailable capability, or cancellation. |
 | `4` | `INTERNAL` | ColdStart internal error; the report is incomplete or unavailable. |
 
-`--strict` may promote configured `not_verified` results to `1` rather than `0`, but it never hides the original status. A skipped or not-applicable check is not a pass and is counted separately in the report.
+`--strict` may promote configured `not_verified` results to `1` rather than `0`, but it never hides the original status. A `skipped` or `not_applicable` check is not a pass and is counted separately in the report.
 
 ## 7. Configuration-file behavior
 
@@ -112,7 +112,7 @@ The following fields are authoritative for schema version `1.0`.
 | `remediation` | yes | yes | array/string/null | Actionable guidance; null when no safe fix can be inferred |
 | `affected_path` | yes | yes | string/null | Project-relative normalized path or null |
 | `category` | yes | no | enum | `project`, `dependencies`, `runtime`, `documentation`, `configuration`, `portability`, `security`, `build`, `execution` |
-| `applicability` | yes | no | object | Applicable/not-applicable reason and adapter |
+| `applicability` | yes | no | object | Applicable/`not_applicable` reason and adapter |
 | `rule_version` | yes | no | string | Algorithm version |
 
 An evidence object contains:

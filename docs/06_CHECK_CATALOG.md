@@ -37,7 +37,7 @@ Evidence uses project-relative paths, bounded details, optional line ranges, and
 | CS-CONFIG-001 | Configuration example discovery | warning | Generic/Python |
 | CS-CONFIG-002 | Environment-variable documentation | warning | Generic/Python |
 | CS-PORT-001 | Developer-specific absolute paths | warning | Generic/Python |
-| CS-SEC-001 | Potential secret exposure indicator | blocking/error | Generic/Python |
+| CS-SEC-001 | Potential secret exposure indicator | error (blocking for private-key material) | Generic/Python |
 | CS-BUILD-001 | Container build configuration discovery | info | Generic/Python |
 | CS-PATH-001 | Repository-contained path validation | error | Generic/Python |
 
@@ -98,7 +98,7 @@ Evidence uses project-relative paths, bounded details, optional line ranges, and
 ## 6. CS-DEPS-002 — Applicable lockfile presence
 
 1. **Purpose:** Check for a lockfile only when the detected Python package manager or project policy makes one applicable.
-2. **Severity:** `error` when applicable and absent; `warning` when manager evidence conflicts; `info` when not applicable.
+2. **Severity:** `error` when applicable and absent; `warning` when manager evidence conflicts; `info` when `not_applicable`.
 3. **Supported types:** Python package managers recognized by the adapter and an explicit project policy.
 4. **Preconditions:** A dependency declaration or package-manager signal is present.
 5. **Inspected data:** `pyproject.toml` build/dependency metadata, requirements/constraint files, known lockfile names, README setup commands, and `.coldstart.toml` policy.

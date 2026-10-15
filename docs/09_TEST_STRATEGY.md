@@ -48,10 +48,10 @@ The canonical `make test` command must work without a network service after depe
 
 | Fixture | Purpose | Expected evidence |
 | --- | --- | --- |
-| `clean-python` | Minimal healthy P0 Python repository | Applicable checks pass or are explicitly not applicable |
+| `clean-python` | Minimal healthy P0 Python repository | Applicable checks pass or are explicitly `not_applicable` |
 | `defective-python` | Missing pin/lockfile/docs/config issue | Stable failures with remediation |
 | `conflicting-python` | README/runtime/lockfile disagreement | Conflict findings, no silent selection |
-| `python-no-lock-required` | Documented pinned requirements policy | Lockfile not applicable, not failed |
+| `python-no-lock-required` | Documented pinned requirements policy | Lockfile `not_applicable`, not failed |
 | `unknown-project` | No supported ecosystem | Generic results and explicit unknowns |
 | `mixed-project` | Multiple metadata roots | Candidate list and applicability warnings |
 | `malformed-metadata` | Invalid TOML/requirements text | Isolated error and partial report |
