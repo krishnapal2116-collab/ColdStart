@@ -1,4 +1,4 @@
-"""Version constants for the Phase 1 package foundation."""
+"""Stable tool, report, catalog, and runtime version constants."""
 
 __version__ = "0.1.0"
 REPORT_SCHEMA_VERSION = "1.0"

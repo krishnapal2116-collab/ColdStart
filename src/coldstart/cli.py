@@ -1,12 +1,19 @@
-"""Phase 1 command-line foundation for ColdStart."""
+"""Command-line entry point for ColdStart."""
 
 from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Sequence
 
+from .audit import run_audit
+from .boundary import (
+    BoundaryValidationError,
+    OutputValidationError,
+    safe_text,
+    validate_output_path,
+)
+from .reporting import serialize_report, write_report
 from .version import (
     CHECK_CATALOG_VERSION,
     REPORT_SCHEMA_VERSION,
@@ -22,6 +29,7 @@ def _version_text() -> str:
             f"Report schema: {REPORT_SCHEMA_VERSION}",
             f"Check catalog: {CHECK_CATALOG_VERSION}",
             f"Target Python: {TARGET_PYTHON}",
+            "P1 Docker verification: unavailable (not implemented)",
         )
     )
 
@@ -40,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
         version=_version_text(),
         help="show the ColdStart, report-schema, and catalog versions",
     )
+    # Accept the display flags both before and after ``audit``.  The command
+    # parser below owns the post-command forms used in the documented examples.
+    parser.add_argument("--format", dest="global_format", choices=("terminal", "json"))
+    parser.add_argument("--output", dest="global_output", metavar="PATH")
+    parser.add_argument("--strict", dest="global_strict", action="store_true")
     subparsers = parser.add_subparsers(dest="command")
 
     version_parser = subparsers.add_parser(
@@ -48,10 +61,30 @@ def build_parser() -> argparse.ArgumentParser:
     version_parser.set_defaults(handler=_run_version)
 
     audit_parser = subparsers.add_parser(
-        "audit", help="audit a local repository (static audit is coming next)"
+        "audit", help="run a safe, non-executing static audit"
     )
     audit_parser.add_argument("path", metavar="PATH")
-    audit_parser.set_defaults(handler=_run_audit_placeholder)
+    audit_parser.add_argument(
+        "--format",
+        dest="audit_format",
+        choices=("terminal", "json"),
+        default=None,
+        help="select terminal or JSON report output (default: terminal)",
+    )
+    audit_parser.add_argument(
+        "--output",
+        dest="audit_output",
+        metavar="PATH",
+        default=None,
+        help="write the selected report to an existing parent directory",
+    )
+    audit_parser.add_argument(
+        "--strict",
+        dest="audit_strict",
+        action="store_true",
+        help="treat not-verified findings as policy failures",
+    )
+    audit_parser.set_defaults(handler=_run_audit)
 
     return parser
 
@@ -61,22 +94,40 @@ def _run_version(_args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_audit_placeholder(args: argparse.Namespace) -> int:
-    """Reserve the audit command without pretending that scanning exists yet."""
+def _run_audit(args: argparse.Namespace) -> int:
+    """Compose validation, the M1 audit, and the requested serializer."""
 
-    repository = Path(args.path)
-    if not repository.exists():
-        print(f"ColdStart: repository path does not exist: {args.path}", file=sys.stderr)
+    output_format = args.audit_format or args.global_format or "terminal"
+    output = args.audit_output or args.global_output
+    strict = bool(args.audit_strict or args.global_strict)
+    try:
+        output_path = validate_output_path(output)
+        result = run_audit(
+            args.path,
+            output_format=output_format,
+            strict=strict,
+        )
+        rendered = serialize_report(
+            result.report,
+            output_format,
+            exit_code=result.exit_code,
+        )
+        if output_path is None:
+            sys.stdout.write(rendered)
+        else:
+            write_report(rendered, output_path)
+        return result.exit_code
+    except (BoundaryValidationError, OutputValidationError) as error:
+        print(f"ColdStart: {safe_text(error)}", file=sys.stderr)
         return 2
-    if not repository.is_dir():
-        print(f"ColdStart: repository path is not a directory: {args.path}", file=sys.stderr)
+    except OSError:
+        print("ColdStart: could not write the requested report output", file=sys.stderr)
         return 2
-
-    print("ColdStart Phase 1 foundation")
-    print("Status: not_verified")
-    print("The static audit engine is planned for the next implementation slice.")
-    print("Repository files: not executed or modified.")
-    return 3
+    except Exception:
+        # Do not expose repository content or host paths when an unexpected
+        # ColdStart failure occurs.  An internal error can never look like pass.
+        print("ColdStart: internal error while auditing", file=sys.stderr)
+        return 4
 
 
 def main(argv: Sequence[str] | None = None) -> int:
