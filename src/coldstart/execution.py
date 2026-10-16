@@ -36,6 +36,14 @@ MAX_TIMEOUT_SECONDS = 3_600
 MAX_OUTPUT_LIMIT_BYTES = 16 * 1024 * 1024
 
 _DOCKER_ARGV = ("docker", "build", "--tag", "coldstart-verification:local", ".")
+_DOCKER_OFFLINE_ARGV = (
+    "docker",
+    "build",
+    "--network=none",
+    "--tag",
+    "coldstart-verification:local",
+    ".",
+)
 _DEFAULT_TEST_ARGV = (
     "python",
     "-m",
@@ -841,11 +849,12 @@ def build_execution_plan(
             if requested not in {
                 ("docker", "build", "."),
                 _DOCKER_ARGV,
+                _DOCKER_OFFLINE_ARGV,
             }:
                 raise ExecutionValidationError(
                     "docker build commands are fixed to docker build --tag coldstart-verification:local ."
                 )
-        argv = _DOCKER_ARGV
+        argv = _DOCKER_OFFLINE_ARGV if offline else _DOCKER_ARGV
         candidate_source = "docker_build_default"
         side_effect_notice = (
             "An authorized Docker build may read the repository and change Docker daemon cache/state; "
@@ -889,7 +898,8 @@ def _validate_plan_for_execution(plan: ExecutionPlan) -> None:
     if not isinstance(plan, ExecutionPlan):
         raise ExecutionValidationError("plan must be an ExecutionPlan")
     if plan.kind == "docker_build":
-        if plan.argv != _DOCKER_ARGV:
+        expected_argv = _DOCKER_OFFLINE_ARGV if plan.offline else _DOCKER_ARGV
+        if plan.argv != expected_argv:
             raise ExecutionValidationError("docker build plan argv is fixed")
     elif plan.kind == "tests":
         _validate_test_argv(plan.argv)

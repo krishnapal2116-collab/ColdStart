@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import sys
 from typing import Sequence
 
@@ -12,6 +13,11 @@ from .boundary import (
     OutputValidationError,
     safe_text,
     validate_output_path,
+)
+from .execution import (
+    ExecutionValidationError,
+    build_execution_plan,
+    execute_execution_plan,
 )
 from .reporting import serialize_report, write_report
 from .version import (
@@ -29,7 +35,7 @@ def _version_text() -> str:
             f"Report schema: {REPORT_SCHEMA_VERSION}",
             f"Check catalog: {CHECK_CATALOG_VERSION}",
             f"Target Python: {TARGET_PYTHON}",
-            "P1 Docker verification: unavailable (not implemented)",
+            "P1 Docker verification: optional authorized runner (availability checked at verify time)",
         )
     )
 
@@ -117,6 +123,78 @@ def build_parser() -> argparse.ArgumentParser:
     )
     audit_parser.set_defaults(handler=_run_audit)
 
+    verify_parser = subparsers.add_parser(
+        "verify", help="propose or explicitly authorize one bounded P1 verification"
+    )
+    verify_parser.add_argument("path", metavar="PATH")
+    verify_parser.add_argument(
+        "--kind",
+        choices=("tests", "docker-build"),
+        required=True,
+        help="verification kind to propose or run",
+    )
+    verify_parser.add_argument(
+        "--format",
+        dest="verify_format",
+        choices=("terminal", "json"),
+        default=None,
+        help="select terminal or JSON report output (default: terminal)",
+    )
+    verify_parser.add_argument(
+        "--output",
+        dest="verify_output",
+        metavar="PATH",
+        default=None,
+        help="write the selected report to an existing parent directory",
+    )
+    verify_parser.add_argument(
+        "--config",
+        dest="verify_config",
+        metavar="PATH",
+        default=None,
+        help="read a local .coldstart.toml policy for the static preflight",
+    )
+    verify_parser.add_argument(
+        "--strict",
+        dest="verify_strict",
+        action="store_true",
+        default=None,
+        help="apply strict policy to the static preflight",
+    )
+    verify_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="request a no-network execution mode where the runner supports it",
+    )
+    verify_parser.add_argument(
+        "--timeout",
+        dest="verify_timeout",
+        type=int,
+        default=30,
+        metavar="SECONDS",
+        help="bound the authorized process duration",
+    )
+    verify_parser.add_argument(
+        "--output-limit",
+        dest="verify_output_limit",
+        type=int,
+        default=65_536,
+        metavar="BYTES",
+        help="bound captured process output per stream",
+    )
+    authorization = verify_parser.add_mutually_exclusive_group()
+    authorization.add_argument(
+        "--authorize",
+        action="store_true",
+        help="explicitly authorize execution after reviewing the printed plan",
+    )
+    authorization.add_argument(
+        "--plan",
+        action="store_true",
+        help="print the plan only; never launch a child process",
+    )
+    verify_parser.set_defaults(handler=_run_verify)
+
     return parser
 
 
@@ -187,6 +265,129 @@ def _run_audit(args: argparse.Namespace) -> int:
         # Do not expose repository content or host paths when an unexpected
         # ColdStart failure occurs.  An internal error can never look like pass.
         print("ColdStart: internal error while auditing", file=sys.stderr)
+        return 4
+
+
+def _verification_exit_code(static_exit_code: int, status: str, *, plan_only: bool) -> int:
+    """Combine static preflight and explicit verification without false passes."""
+
+    if static_exit_code in {2, 4}:
+        return static_exit_code
+    if plan_only or status == "passed":
+        return static_exit_code
+    if status == "failed":
+        return static_exit_code if static_exit_code != 0 else 1
+    if status in {"denied", "not_verified", "unavailable", "timeout", "incomplete"}:
+        return static_exit_code if static_exit_code != 0 else 3
+    return 4
+
+
+def _verification_mapping(
+    *,
+    kind: str,
+    plan: object | None = None,
+    receipt: object | None = None,
+    status: str,
+    reason: str | None = None,
+) -> dict[str, object]:
+    """Build the additive verification section without changing P0 findings."""
+
+    verification: dict[str, object] = {
+        "requested": [kind],
+        "authorized": [kind] if receipt is not None and getattr(receipt, "authorized", False) else [],
+        "executions": [receipt.to_dict()] if receipt is not None else [],
+        "status": status,
+    }
+    if plan is not None:
+        verification["plan"] = plan.to_dict()
+    if reason:
+        verification["reason"] = safe_text(reason)
+    return verification
+
+
+def _run_verify(args: argparse.Namespace) -> int:
+    """Run a static preflight, then optionally execute one reviewed plan."""
+
+    output_format = args.verify_format or args.global_format or "terminal"
+    output = args.verify_output or args.global_output
+    config_path = args.verify_config or args.global_config
+    strict = bool(args.verify_strict or args.global_strict)
+    plan_only = bool(args.plan)
+    authorize = bool(args.authorize)
+    try:
+        output_path = validate_output_path(output)
+        static_result = run_audit(
+            args.path,
+            output_format=output_format,
+            strict=strict,
+            config_path=config_path,
+        )
+        plan = None
+        receipt = None
+        try:
+            plan = build_execution_plan(
+                static_result.boundary.root,
+                args.kind,
+                offline=bool(args.offline),
+                timeout_seconds=args.verify_timeout,
+                output_limit_bytes=args.verify_output_limit,
+            )
+        except ExecutionValidationError as error:
+            verification = _verification_mapping(
+                kind=args.kind,
+                status="not_verified",
+                reason=str(error),
+            )
+            report = replace(static_result.report, verification=verification)
+            exit_code = _verification_exit_code(
+                static_result.exit_code,
+                "not_verified",
+                plan_only=False,
+            )
+        else:
+            if plan_only:
+                verification = _verification_mapping(
+                    kind=args.kind,
+                    plan=plan,
+                    status="planned",
+                    reason="Plan-only preview; no child process was started.",
+                )
+                report = replace(static_result.report, verification=verification)
+                exit_code = _verification_exit_code(
+                    static_result.exit_code,
+                    "planned",
+                    plan_only=True,
+                )
+            else:
+                receipt = execute_execution_plan(plan, authorize=authorize)
+                verification = _verification_mapping(
+                    kind=args.kind,
+                    plan=plan,
+                    receipt=receipt,
+                    status=receipt.status,
+                    reason=receipt.reason,
+                )
+                report = replace(static_result.report, verification=verification)
+                exit_code = _verification_exit_code(
+                    static_result.exit_code,
+                    receipt.status,
+                    plan_only=False,
+                )
+
+        rendered = serialize_report(report, output_format, exit_code=exit_code)
+        if output_path is None:
+            sys.stdout.write(rendered)
+        else:
+            write_report(rendered, output_path)
+        return exit_code
+    except (BoundaryValidationError, OutputValidationError, ExecutionValidationError) as error:
+        print(f"ColdStart: {safe_text(error)}", file=sys.stderr)
+        return 2
+    except OSError:
+        print("ColdStart: could not write the requested report output", file=sys.stderr)
+        return 2
+    except Exception:
+        print("ColdStart: internal error while verifying", file=sys.stderr)
         return 4
 
 

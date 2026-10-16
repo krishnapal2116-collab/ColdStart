@@ -177,6 +177,34 @@ def render_terminal(
         if isinstance(verification, Mapping)
         else "not requested"
     )
+    if isinstance(verification, Mapping):
+        plan = verification.get("plan")
+        if isinstance(plan, Mapping):
+            plan_argv = plan.get("argv", plan.get("command", []))
+            if isinstance(plan_argv, list):
+                command_text = " ".join(_terminal_text(item) for item in plan_argv)
+            else:
+                command_text = _terminal_text(plan_argv)
+            lines.append(
+                "Verification plan: "
+                f"kind={_terminal_text(plan.get('kind', 'unknown'))} "
+                f"command={command_text} "
+                f"workdir={_terminal_text(plan.get('working_directory', '.'))} "
+                f"network={_terminal_text(plan.get('network_mode', 'unknown'))} "
+                f"authorization={'required' if plan.get('authorization_required', True) else 'not required'}"
+            )
+        executions = verification.get("executions")
+        if isinstance(executions, list):
+            for execution in executions:
+                if not isinstance(execution, Mapping):
+                    continue
+                lines.append(
+                    "Execution receipt: "
+                    f"status={_terminal_text(execution.get('status', 'unknown'))} "
+                    f"authorization={_terminal_text(execution.get('authorization', 'unknown'))} "
+                    f"executed={_terminal_text(execution.get('executed', False))} "
+                    f"exit_code={_terminal_text(execution.get('exit_code', 'none'))}"
+                )
     limitations = detection.get("limitations", [])
     lines.append(
         f"Verification: {_terminal_text(verification_status).replace('_', ' ')}"
