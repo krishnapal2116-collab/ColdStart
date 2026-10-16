@@ -52,7 +52,7 @@ class Phase1CliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("ColdStart 0.1.0", result.stdout)
 
-    def test_audit_placeholder_is_truthful_and_does_not_execute_files(self) -> None:
+    def test_audit_is_truthful_and_does_not_execute_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = Path(temporary_directory)
             marker = repository / "executed-marker.txt"
@@ -63,10 +63,10 @@ class Phase1CliTests(unittest.TestCase):
 
             result = run_cli("audit", str(repository))
 
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("Status: not_verified", result.stdout)
-        self.assertIn("not implemented in M1", result.stdout)
-        self.assertIn("no project files were read or executed", result.stdout)
+        self.assertIn("M3 evaluates", result.stdout)
+        self.assertIn("never executes repository code", result.stdout)
         self.assertFalse(marker.exists())
 
     def test_audit_rejects_a_missing_path(self) -> None:

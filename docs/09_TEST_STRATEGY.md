@@ -1,7 +1,7 @@
 # ColdStart Test Strategy
 
-**Status:** M1/M2 tests implemented and passing in the available environment; catalog-rule tests remain planned
-**Version:** 0.3
+**Status:** M1/M2/M3 tests implemented and passing in the available environment; remaining catalog-rule tests remain planned
+**Version:** 0.4
 **Canonical command after implementation:** `make test`
 
 ## 1. Purpose and principles
@@ -171,6 +171,6 @@ The current offline application suite is implemented and runs with the standard 
 PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-It ran 33 tests under Python 3.14.7: 31 passed and 2 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. Compile checks also passed with `python -m compileall -q src build_backend tests`.
+It ran 59 tests under Python 3.14.7: 57 passed and 2 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. Compile checks also passed with `python -m compileall -q src build_backend tests`.
 
-The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and all P0 catalog-rule tests remain unverified or planned. These checks must not be inferred from the available Python 3.14.7 run.
+The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and the remaining P0 catalog-rule tests remain unverified or planned. These checks must not be inferred from the available Python 3.14.7 run.

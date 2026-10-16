@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1/M2 contract implemented; full P0 catalog contract remains in progress
-**Version:** 0.3
+**Status:** M1/M2/M3 contract implemented; full P0 catalog contract remains in progress
+**Version:** 0.4
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation

@@ -194,7 +194,7 @@ def render_terminal(
     ):
         next_step = "review the discovery limitations and clarify the repository type before relying on ecosystem-specific checks."
     else:
-        next_step = "review applicability decisions; the P0 catalog rule logic is outside this M2 audit scope."
+        next_step = "review the M3 findings and applicability decisions; the remaining P0 catalog rule logic is outside this audit scope."
     lines.append(f"Next step: {next_step}")
     lines.append(f"Exit code: {exit_code}")
     return "\n".join(lines) + "\n"

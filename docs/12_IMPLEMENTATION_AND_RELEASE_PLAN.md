@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 3/M2 discovery and applicability implemented; target verification pending
-**Version:** 0.3
+**Status:** Phase 3/M3 static check slice implemented; target verification pending
+**Version:** 0.4
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, and Phase 3/M2 discovery/applicability slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, and Phase 3/M3 static check slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -79,20 +79,23 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M3 — Python P0 check slice
 
-**Next implementation slice:** M3 is the next planned step after the M2 closeout.
+**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
 
-- **Goal:** Implement the first half of the catalog: discovery, dependency, lockfile, runtime, and setup checks.
+- **Goal:** Implement the first half of the catalog: dependency, lockfile, runtime, and setup checks after M2 discovery.
 - **Requirements:** FR-005, FR-008, FR-016; NFR-012.
 - **Expected files/modules:** `checks/registry`, `checks/python`, evidence/redaction helpers, clean/defective fixtures.
 - **Dependencies:** M2.
-- **Tasks:** Implement exact catalog algorithms, evidence, remediation, and rule versions.
-- **Tests:** Positive/negative/edge/false-positive cases for each rule; contract snapshots.
-- **Acceptance:** Defective fixture produces expected findings and clean fixture does not inherit them.
+- **Tasks:** Implement bounded static algorithms, evidence, remediation, and rule versions for `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`.
+- **Tests:** Positive/negative/edge/false-positive cases for each rule; CLI/report integration; fingerprint change; no-execution checks.
+- **Acceptance:** Defective fixture produces expected findings and clean fixture does not inherit them; non-Python checks remain explicitly `not_applicable`; policy exclusions remain visible as `skipped`.
 - **Failure conditions:** Rule lacks applicability or evidence, or a false positive is accepted without review.
 - **Git checkpoint:** `feat: implement Python dependency and runtime checks`.
+- **Verification:** 26 M3 tests pass under Python 3.14.7; integrated suite has 57 passing tests with 2 platform-expected skips.
 - **Relative effort:** Large.
 
 ### M4 — Remaining catalog and release reports
+
+**Next implementation slice:** M4 is the next planned step after M3 closeout.
 
 - **Goal:** Complete P0 documentation/configuration/path/security/container-discovery checks and polished reports.
 - **Requirements:** FR-005, FR-008, FR-009, FR-010, FR-011, FR-012, FR-016; NFR-003, NFR-008.

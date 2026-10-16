@@ -18,6 +18,7 @@ from .boundary import (
     validate_repository,
 )
 from .catalog import CATALOG_BY_ID
+from .checks import evaluate_dependency_checks, evaluate_runtime_and_setup_checks
 from .config import ColdStartConfig, load_config
 from .discovery import DetectionResult, InventoryResult, detect_projects, inventory_repository
 from .findings import Applicability, AuditReport, Evidence, Finding
@@ -31,7 +32,19 @@ M1_LIMITATION = (
 )
 M2_LIMITATION = (
     "M2 implements bounded inventory, project detection, and catalog applicability planning; "
-    "P0 catalog rule logic remains outside this milestone."
+    "those results do not prove that the repository builds or tests successfully."
+)
+M3_LIMITATION = (
+    "M3 evaluates dependency declarations, applicable Python lock evidence, Python runtime declarations, "
+    "and setup documentation statically; CS-DOCS-002 and the remaining P0 catalog rules remain outside this milestone."
+)
+M3_CHECK_IDS = frozenset(
+    {
+        "CS-DEPS-001",
+        "CS-DEPS-002",
+        "CS-RUNTIME-001",
+        "CS-DOCS-001",
+    }
 )
 
 
@@ -369,20 +382,20 @@ def _scope_finding(inventory: InventoryResult) -> Finding:
         status=status,
         title="Static catalog scope",
         message=(
-            "M1 reported that discovery was not implemented in M1 and no project files were read or executed; "
-            "M2 now provides bounded discovery and applicability decisions, while the P0 catalog rule logic remains outside this milestone."
+            "M2 provides bounded discovery and applicability decisions, and M3 evaluates the first dependency, "
+            "runtime, and setup-documentation checks; the remaining P0 catalog rule logic remains outside this milestone."
         ),
         evidence=(
             Evidence(
                 kind="metadata",
                 path=None,
                 detail=(
-                    "The report includes catalog applicability and discovery evidence only; no future check is represented as evaluated."
+                    "The report includes bounded M2 discovery plus M3 finding evidence; no remaining future check is represented as evaluated."
                 ),
             ),
         ),
         remediation=(
-            "Use the discovery and applicability evidence as input to a later catalog-rule milestone; do not treat it as a build or test result."
+            "Review the evaluated M3 findings, then use the remaining applicability evidence as input to later catalog-rule milestones; do not treat unimplemented scope as a build or test result."
         ),
         affected_path=None,
         category="project",
@@ -415,6 +428,7 @@ def _fingerprint_inputs(
     detection: DetectionResult,
     applicability: tuple[ApplicabilityDecision, ...],
     policy: Mapping[str, object],
+    findings: Sequence[Finding],
 ) -> dict[str, object]:
     return {
         "paths": list(inventory.relative_paths),
@@ -426,6 +440,7 @@ def _fingerprint_inputs(
         "detection": detection.to_dict(),
         "applicability": [item.to_dict() for item in applicability],
         "policy": dict(policy),
+        "findings": [finding.to_dict() for finding in findings],
     }
 
 
@@ -493,6 +508,17 @@ def run_audit(
         detection,
         excluded_checks=options.excluded_checks,
     )
+    m3_findings = evaluate_dependency_checks(
+        boundary.root,
+        inventory,
+        detection,
+        excluded_checks=options.excluded_checks,
+    ) + evaluate_runtime_and_setup_checks(
+        boundary.root,
+        inventory,
+        detection,
+        excluded_checks=options.excluded_checks,
+    )
     findings = (
         _boundary_finding(),
         _inventory_finding(
@@ -506,11 +532,12 @@ def run_audit(
             excluded="CS-PROJECT-002" in options.excluded_checks,
         ),
         _scope_finding(inventory),
-    ) + tuple(
+    ) + m3_findings + tuple(
         _excluded_catalog_finding(decision)
         for decision in applicability
         if decision.status == "skipped"
-        and decision.check_id not in {"CS-PROJECT-001", "CS-PROJECT-002"}
+        and decision.check_id
+        not in ({"CS-PROJECT-001", "CS-PROJECT-002"} | M3_CHECK_IDS)
     )
     policy_fingerprint_data = {
         "name": options.policy_name,
@@ -536,6 +563,7 @@ def run_audit(
         detection,
         applicability,
         policy_fingerprint_data,
+        findings,
     )
     fingerprint = calculate_audit_fingerprint(
         tool_version=__version__,
@@ -560,8 +588,8 @@ def run_audit(
             "applicability": [item.to_dict() for item in applicability],
             "inventory": inventory.stats_dict(),
             "file_inventory": [record.to_dict() for record in inventory.records],
-            "scope": "M2 bounded discovery and applicability",
-            "limitations": [M2_LIMITATION]
+            "scope": "M2 bounded discovery and M3 static catalog checks",
+            "limitations": [M2_LIMITATION, M3_LIMITATION]
             + (["Inventory coverage is partial; rerun after reviewing limits."] if inventory.incomplete else []),
             "fingerprint_inputs": {
                 "paths": list(inventory.relative_paths),
@@ -632,6 +660,8 @@ __all__ = [
     "BoundaryValidationError",
     "M1_LIMITATION",
     "M2_LIMITATION",
+    "M3_CHECK_IDS",
+    "M3_LIMITATION",
     "audit",
     "run_audit",
 ]

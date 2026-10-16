@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2 implemented and tested; later catalog slices remain specified
-**Version:** 0.3
+**Status:** M1/M2/M3 implemented and tested; later catalog slices remain specified
+**Version:** 0.4
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. The P0 catalog rule rows remain future work.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. The remaining P0 catalog rule rows remain future work.
 
 ## 1. Functional requirements
 
@@ -93,7 +93,7 @@ The following requirements now have implementation and test evidence in the M1 s
 - `FR-001`, `FR-002`, `FR-006`, `FR-007`, `FR-009`, `FR-010`, `FR-011`, `FR-028`, and `FR-029` — implemented and tested under Python 3.14.7.
 - `NFR-001`, `NFR-002`, and `NFR-015` — implemented and tested under Python 3.14.7.
 
-The M1 evidence does not verify the pinned Python 3.12.8 environment, Make, Docker, or the later discovery/catalog requirements. Those remain explicitly unverified or specified-only until their corresponding commands and slices run.
+The M1 evidence does not verify the pinned Python 3.12.8 environment, Make, Docker, or the later catalog requirements. Those remain explicitly unverified or specified-only until their corresponding commands and slices run.
 
 ## 6. M2 implementation state
 
@@ -103,4 +103,14 @@ The following requirements now have implementation and test evidence in the M2 s
 - `NFR-005`, `NFR-006`, `NFR-007`, and `NFR-012` — partial-coverage findings, file/byte/depth/time bounds, exclusion and symlink handling, and report provenance for limits, policy, inventory, detection, applicability, and limitations.
 - M2 report behavior is covered by `tests/test_phase3_m2_discovery.py`: 19 tests, with 17 executed successfully and 2 platform-expected skips on the current Windows environment.
 
-The integrated offline command currently passes 31 executed tests with 2 platform-expected skips under Python 3.14.7. This does not implement the 13 P0 catalog rules: M2 only exposes their applicability decisions and keeps unevaluated catalog scope `not_verified`. Python 3.12.8, Make, Docker, and clean-Linux verification remain unverified.
+The integrated offline command currently passes 57 executed tests with 2 platform-expected skips under Python 3.14.7. M2 exposes bounded discovery and applicability; M3 evaluates `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`. The remaining P0 catalog rules, including `CS-DOCS-002`, remain `not_verified`. Python 3.12.8, Make, Docker, and clean-Linux verification remain unverified.
+
+## 7. M3 implementation state
+
+The following requirements now have implementation and test evidence in the M3 slice:
+
+- `FR-005`, `FR-008`, and `FR-016` for dependency declaration, applicable lockfile, runtime declaration, and setup-documentation findings that use bounded static evidence and never execute repository code.
+- `NFR-012` for M3 rule versions, applicability, evidence, remediation, limitations, and report provenance.
+- M3 coverage is provided by `tests/test_phase3_m3_dependencies.py`, `tests/test_phase3_m3_runtime_docs.py`, and `tests/test_phase3_m3_integration.py`: 26 tests passed under Python 3.14.7.
+
+M3 does not implement `CS-DOCS-002` or the remaining configuration, portability, security, and build-discovery checks. Exact Python 3.12.8, Make, Docker, and clean-Linux verification remain open.
