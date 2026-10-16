@@ -1,7 +1,7 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Phase 3/M4 complete static catalog verified under the available interpreter; target-runtime/build verification pending
-**Version:** 0.5
+**Status:** Phase 5 offline hardening and self-audit verified under the available interpreter; target-runtime/build verification pending
+**Version:** 0.6
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
 ## 1. Purpose
@@ -133,15 +133,15 @@ ColdStart P0 reads no required secret environment variables. Optional debug sett
 - [x] Exact Python runtime is declared in `.python-version`.
 - [x] Runtime and development lockfiles are committed; Phase 1 contains no third-party entries requiring hashes.
 - [x] Dockerfile and base image choice are documented.
-- [ ] `make test` works offline after setup; Make is unavailable in the current environment.
+- [ ] `make test` works offline after setup; Make is unavailable in the current environment (`make: command not found`).
 - [ ] Clean Linux checkout instructions were actually run.
 - [ ] Docker build/run was actually run.
 - [ ] No global dependency is required by the instructions.
 - [ ] README setup/run/test/build/deploy/limitations steps match the implementation.
-- [ ] Actual output and exit codes are recorded.
+- [x] Available-environment output and exit codes are recorded; unavailable target-tool outcomes remain open.
 - [ ] No unsupported “fully reproducible everywhere” claim appears.
 
-## 13. M1/M2/M3/M4 verification record
+## 13. M1/M2/M3/M4/M5 verification record
 
 The following checks were actually run in the current workspace:
 
@@ -159,9 +159,16 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M3 integration — 57 tests passed with 2 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase4_m4_docs_config tests.test_phase4_m4_quality tests.test_phase4_m4_integration -v` — 38 M4 tests ran with 37 passes and 1 platform-expected symlink skip under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M4 integration — 94 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase5_m5_hardening -v` — 7 M5 hardening/self-audit tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M5 hardening — 101 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m coldstart audit . --format terminal` — exited `0`, reported a high-confidence Python candidate, bounded inventory with no staging, all 13 catalog IDs, and bounded `not_verified` evidence for oversized/dynamic local files.
-- `python -m compileall -q src build_backend tests` after M3 integration — passed under Python 3.14.7.
-- `git diff --check` after M3 integration — passed.
+- `python -m compileall -q src build_backend tests` after M5 hardening — passed under Python 3.14.7.
+- `git diff --check` after M5 hardening — passed.
+- `python -m pip wheel --no-deps --no-build-isolation .` after M5 hardening — refused because Python 3.14.7 does not satisfy the pinned `>=3.12,<3.13` requirement.
+- `make test` — unavailable: `make: command not found`.
+- `docker --version` and `docker build --pull=false --tag coldstart:m5 .` — unavailable: `docker: command not found`.
+- `python3.12 --version` — unavailable: `python3.12: command not found`.
+- `py -3.12 --version` — unavailable: the Python launcher reported no suitable runtime.
 
 The following target checks remain unverified because the current machine does not provide them:
 

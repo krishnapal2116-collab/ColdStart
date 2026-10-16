@@ -1,8 +1,8 @@
 # ColdStart Documentation Quality Audit
 
-**Status:** Completed through Phase 3/M4 closeout; target-runtime/build gates remain open
-**Version:** 0.5
-**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4 implementation state
+**Status:** Completed through Phase 5 hardening closeout; target-runtime/build gates remain open
+**Version:** 0.6
+**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4/M5 implementation state
 
 ## 1. Audit objective
 
@@ -43,6 +43,7 @@ The following checks were run after the document pack was written:
 - Phase 3/M2 verification record: bounded inventory limits, exclusions, symlink handling, Python/Node/unknown/mixed detection, fail-closed policy parsing, applicability planning, skipped-check visibility, deterministic reports, read-only behavior, and incomplete-coverage exit behavior were exercised; the integrated suite ran 31 tests successfully with 2 platform-expected skips.
 - Phase 3/M3 verification record: dependency declaration, applicable lockfile, runtime declaration, setup-documentation, non-Python applicability, policy exclusion, fingerprint, integration, and no-execution cases were exercised; the M3 tests ran 26 tests successfully.
 - Phase 3/M4 verification record: test-command documentation, configuration examples, environment-variable documentation, portability, secret-safe security indicators, container discovery, contained paths, complete-catalog integration, policy exclusions, and no-execution cases were exercised; the M4 tests ran 37 cases successfully with 1 platform-expected symlink skip.
+- Phase 5/M5 verification record: complete self-audit catalog coverage, repeated fingerprint stability, report-contract enums, terminal/JSON parity, release-file checks, malicious-fixture non-execution, redaction, and control-like input handling were exercised; the M5 tests ran 7 cases successfully.
 
 ## 4. Quality review
 
@@ -75,10 +76,10 @@ The review found and handled these items:
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
 8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, profiles, and plan-only verification remain P1 and are explicitly optional.
-9. **Informational — Phase 1/M1/M2/M3/M4 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, and complete P0 static catalog are present. Exact Python 3.12.8, Make, Docker, clean-build, and authorized project test/build evidence is unavailable on the current machine.
+9. **Informational — Phase 1/M1/M2/M3/M4/M5 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, complete P0 static catalog, and available-environment hardening/self-audit coverage are present. Exact Python 3.12.8, Make, Docker, clean-build, and authorized project test/build evidence is unavailable on the current machine.
 
 No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize implementation.
 
 ## 6. Completion rule
 
-The documentation audit is complete through Phase 3/M4 because all blocking contradictions were corrected, M4 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. P1 execution and target-runtime/build gates remain future work and must not be reported as passed before actual execution.
+The documentation audit is complete through Phase 5 because all blocking contradictions were corrected, M5 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. P1 execution and target-runtime/build gates remain future work and must not be reported as passed before actual execution.

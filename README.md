@@ -4,7 +4,7 @@ ColdStart is a local-first software-repository reproducibility auditor. It helps
 
 ## Current status
 
-**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, and M4 complete P0 static catalog checks are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, dependency/lockfile checks, runtime and documentation checks, configuration checks, portability/path checks, security indicators, container discovery, and report evidence are implemented. Target-runtime, Make, Docker, and actual project test/build execution remain environment or P1 verification gaps in the current workspace.
+**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, and M5 offline hardening/self-audit coverage are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, and non-execution hardening are implemented. Target-runtime, Make, Docker, and actual project test/build execution remain environment or P1 verification gaps in the current workspace.
 
 ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. Docker-based clean builds and offline test execution are P1 capabilities that require explicit authorization and are useful but not required for static audit usefulness.
 
@@ -65,12 +65,12 @@ PYTHONPATH=src python -m coldstart version
 PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`make test` is the canonical Linux command. The direct source-tree 97-test suite currently passes with 94 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
+`make test` is the canonical Linux command. The direct source-tree 104-test suite currently passes with 101 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
 
 ## Safety promise
 
 Static inspection is read-only and non-executing by default. Every finding must identify its rule, status, severity, evidence or limitation, and remediation where appropriate. `not_applicable`, `skipped`, and `not_verified` are not passes. ColdStart must never claim tests or builds passed unless an authorized execution actually produced that evidence.
 
-## Phase 0, M1, M2, M3, and M4 checks
+## Phase 0, M1, M2, M3, M4, and M5 checks
 
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4 have a passing 97-test offline integration/unit suite: 94 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so those target-environment checks remain unverified. ColdStart itself cannot be declared reproducible until those commands run successfully.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5 have a passing 104-test offline integration/unit suite: 101 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so those target-environment checks remain unverified. ColdStart itself cannot be declared reproducible until those commands run successfully.

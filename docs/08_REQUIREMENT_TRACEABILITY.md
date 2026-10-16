@@ -1,7 +1,7 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2/M3/M4 implemented and tested; P1 execution remains specified
-**Version:** 0.5
+**Status:** M1/M2/M3/M4/M5 implemented and tested; target/P1 execution remains specified
+**Version:** 0.6
 
 This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. P1 execution requirements remain separate and unverified.
 
@@ -124,3 +124,16 @@ The following requirements now have implementation and test evidence in the M4 s
 - M4 coverage is provided by `tests/test_phase4_m4_docs_config.py`, `tests/test_phase4_m4_quality.py`, and `tests/test_phase4_m4_integration.py`: 38 tests, with 37 executed successfully and one platform-expected symlink skip on the current Windows environment.
 
 All 13 P0 catalog IDs now produce one static finding each in a complete report. A static result does not claim that a project test or container build executed; those remain P1 verification work.
+
+## 9. M5 hardening and release-candidate state
+
+M5 adds `tests/test_phase5_m5_hardening.py`, covering:
+
+- complete 13-check self-audit coverage and one-finding-per-catalog-ID behavior;
+- safe output/redaction and absence of staging or repository execution;
+- repeated report/fingerprint stability;
+- terminal/JSON semantic parity and finding-contract enums;
+- release-file presence and canonical Makefile/Dockerfile/runtime documentation;
+- malicious-fixture non-execution and control-like/secret-shaped evidence handling.
+
+The M5 module has 7 passing tests under Python 3.14.7. The integrated offline suite has 101 passing tests with 3 platform-expected skips. Exact Python 3.12.8, GNU Make, Docker, clean Linux, and authorized project test/build execution remain unverified.

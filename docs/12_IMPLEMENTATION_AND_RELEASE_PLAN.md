@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 3/M4 complete P0 static catalog implemented; target verification pending
-**Version:** 0.5
+**Status:** Phase 5 offline hardening/self-audit implemented; target verification pending
+**Version:** 0.6
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, and Phase 3/M3/M4 static check slices are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, Phase 3/M3/M4 static check slices, and Phase 5 offline hardening/self-audit coverage are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -111,20 +111,23 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M5 — P0 hardening and clean release candidate
 
-**Next implementation slice:** M5 is the next planned step after M4 closeout.
+**Current state:** Offline hardening and self-audit coverage implemented and tested under Python 3.14.7; clean Linux, Python 3.12.8, Make, Docker, and authorized project verification remain pending.
 
 - **Goal:** Demonstrate the small working product under competition constraints.
 - **Requirements:** All P0 FR/NFR; especially FR-013–017, FR-028–030, NFR-001–012, and NFR-015.
 - **Expected files/modules:** tests, fixtures, docs, CI/local scripts, release evidence.
 - **Dependencies:** M4.
-- **Tasks:** Run complete offline suite, clean Linux build, Docker build of ColdStart, cross-platform smoke checks, self-audit the ColdStart repository, documentation audit, and demo preparation.
+- **Tasks:** Run complete offline suite, harden deterministic/self-audit/report/redaction behavior, validate release files and canonical commands, attempt clean Linux build, Docker build of ColdStart, cross-platform smoke checks, self-audit the ColdStart repository, documentation audit, and demo preparation.
 - **Tests:** `make test`, clean checkout, Docker build/run, security suite, deterministic snapshots, no-network test, and self-audit report review.
-- **Acceptance:** P0 definition of done, a reviewed self-audit, and all release-blocking defects closed.
+- **Acceptance:** P0 definition of done, 13-check self-audit coverage, reviewed redaction/non-execution evidence, and all release-blocking defects that are testable in the available environment closed.
 - **Failure conditions:** Any false pass, unsafe execution, reproducibility gap, or undocumented requirement.
+- **Verification:** 7 M5 hardening tests pass; integrated suite has 101 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, and clean Linux remain blocked by the environment.
 - **Git checkpoint:** `release: ColdStart P0 candidate`.
 - **Relative effort:** Large and reserved time.
 
 ### M6 — Optional P1 verification layer
+
+**Next implementation slice:** M6 is the next planned step after M5 closeout, only when a Docker-enabled Python 3.12.8 environment is available.
 
 - **Goal:** Add explicit offline test and clean Docker build verification without changing P0 safety.
 - **Requirements:** FR-018, FR-019, NFR-013, NFR-014.
