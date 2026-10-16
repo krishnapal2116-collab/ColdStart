@@ -232,7 +232,7 @@ class Phase6M6ExecutionTests(unittest.TestCase):
             plan = build_execution_plan(
                 repository,
                 "tests",
-                offline=True,
+                offline=False,
                 timeout_seconds=10,
                 output_limit_bytes=1024,
                 command=_python_unittest_command(),
@@ -304,6 +304,25 @@ class Phase6M6ExecutionTests(unittest.TestCase):
             self.assertEqual(before, _manifest(repository))
             self.assertTrue(marker.exists())
 
+    def test_offline_test_request_is_not_verified_without_network_isolation(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-offline-") as temporary:
+            repository = Path(temporary) / "fixture"
+            repository.mkdir()
+            marker = Path(temporary) / "offline-marker.txt"
+            _write_unittest_fixture(repository, marker=marker)
+            plan = build_execution_plan(
+                repository,
+                "tests",
+                offline=True,
+                command=_python_unittest_command(),
+            )
+
+            receipt = execute_execution_plan(plan, authorize=True)
+
+        self.assertEqual(receipt.status, "not_verified")
+        self.assertIn("network isolation", receipt.reason)
+        self.assertFalse(marker.exists())
+
     def test_shell_operators_and_unsupported_commands_are_rejected_before_execution(self) -> None:
         with tempfile.TemporaryDirectory(prefix="coldstart-m6-reject-") as temporary:
             repository = Path(temporary) / "fixture"
@@ -349,7 +368,7 @@ class Phase6M6ExecutionTests(unittest.TestCase):
             plan = build_execution_plan(
                 repository,
                 "tests",
-                offline=True,
+                offline=False,
                 timeout_seconds=1,
                 output_limit_bytes=1024,
                 command=_python_unittest_command(),

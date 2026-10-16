@@ -1185,6 +1185,18 @@ def execute_execution_plan(
             reason="Docker is unavailable because it is not installed or is not on PATH.",
             cleanup_status="not_started",
         )
+    if plan.kind == "tests" and plan.offline:
+        return _empty_receipt(
+            plan,
+            status="not_verified",
+            authorized=True,
+            executed=False,
+            reason=(
+                "Offline test execution is unavailable because the host runner "
+                "cannot enforce network isolation for a direct test process."
+            ),
+            cleanup_status="not_started",
+        )
     executable = _executable_name(plan.argv[0])
     if shutil.which(plan.argv[0]) is None and executable not in {"python", "python3", "py"}:
         return _empty_receipt(
