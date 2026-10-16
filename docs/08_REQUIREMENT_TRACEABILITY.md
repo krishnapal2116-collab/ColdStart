@@ -149,4 +149,6 @@ M6 adds `src/coldstart/execution.py`, the distinct `verify` CLI command, receipt
 - fixed Docker build planning and truthful Docker-unavailable receipts;
 - fail-closed handling for `tests --offline` because the current host runner cannot enforce network isolation for a direct test process.
 
-Coverage is provided by `tests/test_phase6_m6_execution.py` (8 tests) and `tests/test_phase6_m6_cli.py` (5 tests). The latest integrated suite has 114 passing tests with 3 platform-expected skips under Python 3.14.7. This is not evidence for Python 3.12.8, Make, Docker-enabled builds, or a clean Linux environment.
+The committed `examples/clean-python` and `examples/defective-python` fixtures complete the P0 demo-input requirement. `tests/test_phase6_m6_examples.py` verifies their expected CLI statuses and read-only behavior.
+
+Coverage is provided by `tests/test_phase6_m6_execution.py` (8 tests), `tests/test_phase6_m6_cli.py` (5 tests), and `tests/test_phase6_m6_examples.py` (2 tests). The latest integrated suite has 116 passing tests with 3 platform-expected skips under Python 3.14.7. This is not evidence for Python 3.12.8, Make, Docker-enabled builds, or a clean Linux environment.

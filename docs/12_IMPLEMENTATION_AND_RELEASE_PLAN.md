@@ -137,7 +137,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** Authorization denial, plan-only no-child, authorized pass, timeout, host-network isolation refusal, Docker unavailable, cleanup, source unchanged, and CLI report integration.
 - **Acceptance:** No execution occurs without explicit authorization; actual attempts record bounded receipts; unsupported network isolation is `not_verified`, never a pass.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
-- **Verification:** 8 M6 execution tests and 5 M6 CLI tests pass; integrated suite has 114 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and network-isolated test execution remain blocked or unavailable in the environment.
+- **Verification:** 8 M6 execution tests and 5 M6 CLI tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 116 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and network-isolated test execution remain blocked or unavailable in the environment.
 - **Git checkpoints:** `b54c468 feat: add authorized verification flow`; `adc98db fix: keep offline tests fail-closed`.
 - **Relative effort:** Very large; omit if it threatens P0.
 

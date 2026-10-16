@@ -1,0 +1,7 @@
+[project]
+name = "clean-python"
+version = "0.1.0"
+description = "A small dependency-free ColdStart acceptance fixture."
+readme = "README.md"
+requires-python = "==3.12.8"
+dependencies = []

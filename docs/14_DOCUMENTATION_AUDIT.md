@@ -29,7 +29,7 @@ Review the specification as an independent engineering pass. The audit must find
 
 The following checks were run after the document pack was written:
 
-- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, M4 complete catalog modules, and the M6 execution/CLI slice are present; target-runtime and Docker-enabled execution remain separate.
+- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, M4 complete catalog modules, M6 execution/CLI slice, and committed clean/defective demo fixtures are present; target-runtime and Docker-enabled execution remain separate.
 - `git diff --check` and `git log --check --oneline --all`: passed.
 - Unique requirement-ID validation: 49 unique IDs (34 functional and 15 non-functional) in the requirements document.
 - Requirement traceability: all 49 requirement IDs are present in the traceability matrix; all 33 P0 requirements have planned acceptance tests.
@@ -45,6 +45,7 @@ The following checks were run after the document pack was written:
 - Phase 3/M4 verification record: test-command documentation, configuration examples, environment-variable documentation, portability, secret-safe security indicators, container discovery, contained paths, complete-catalog integration, policy exclusions, and no-execution cases were exercised; the M4 tests ran 37 cases successfully with 1 platform-expected symlink skip.
 - Phase 5/M5 verification record: complete self-audit catalog coverage, repeated fingerprint stability, report-contract enums, terminal/JSON parity, release-file checks, malicious-fixture non-execution, redaction, and control-like input handling were exercised; the M5 tests ran 7 cases successfully.
 - Phase 6/M6 verification record: plan-only no-child behavior, explicit authorization/denial, safe structured Python test execution, timeout termination, bounded output, source-manifest comparison, Docker-unavailable behavior, receipt redaction, invalid-limit handling, and CLI terminal/JSON integration were exercised; 13 M6 tests ran successfully. Direct host `--offline` tests fail closed as `not_verified` because network isolation is not enforceable in the current runner.
+- Example-fixture verification record: `examples/clean-python` and `examples/defective-python` are audited through the real CLI; the focused fixture tests cover expected clean/defective statuses and verify that static audits leave both repositories unchanged.
 
 ## 4. Quality review
 

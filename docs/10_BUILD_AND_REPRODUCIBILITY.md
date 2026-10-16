@@ -162,7 +162,10 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest tests.test_phase5_m5_hardening -v` — 7 M5 hardening/self-audit tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M5 hardening — 101 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase6_m6_execution tests.test_phase6_m6_cli -v` — 13 M6 tests passed under Python 3.14.7.
-- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M6 — 114 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase6_m6_examples -v` — 2 committed clean/defective fixture acceptance tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M6/fixtures — 116 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart audit examples/clean-python --format json` — exited `0` with no failed/error findings.
+- `PYTHONPATH=src python -m coldstart audit examples/defective-python --format json` — exited `1` with expected static findings and no fixture execution.
 - `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --plan --format json` — exited `0`, produced a plan with structured argv, `network_mode=none`, explicit authorization requirement, and no execution receipt.
 - `PYTHONPATH=src python -m coldstart verify . --kind docker-build --offline --authorize --format json` — exited `3`, produced a truthful `not_verified` receipt because Docker is unavailable; no host fallback was attempted.
 - `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --authorize --format json` — direct host offline execution is fail-closed and returns `not_verified` because network isolation is not enforceable by the current runner.

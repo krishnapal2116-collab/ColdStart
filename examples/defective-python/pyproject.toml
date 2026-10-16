@@ -1,0 +1,6 @@
+[project]
+name = "defective-python"
+version = "0.1.0"
+description = "A deliberately defective ColdStart acceptance fixture."
+requires-python = ">=3.13,<3.14"
+dependencies = ["example-widget>=1.0"]

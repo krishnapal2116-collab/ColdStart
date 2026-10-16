@@ -1,7 +1,7 @@
 # ColdStart Demo and Submission Plan
 
-**Status:** Planned; no demo result has been recorded
-**Version:** 0.2
+**Status:** Committed demo fixtures and commands are implemented; final recording remains pending
+**Version:** 0.3
 **Target duration:** Two to three minutes
 
 ## 1. Audience takeaway
@@ -14,24 +14,24 @@ ColdStart finds “works on my machine” risks safely, explains the evidence, a
 
 ## 3. Demonstration repository
 
-The planned fixture is a deliberately defective Python repository under a future `examples/defective-python/` directory. It will contain:
+The committed fixture is the deliberately defective Python repository at `examples/defective-python/`. It contains:
 
 - a Python package metadata file;
 - a README with an incomplete setup path;
-- a missing or inapplicable lockfile scenario chosen deliberately;
-- a runtime declaration conflict or missing pin;
-- a documented test command without complete supporting evidence;
-- a safe fake configuration requirement without an example;
+- a missing lockfile for a declared dependency;
+- a runtime declaration conflict;
+- incomplete test/configuration evidence;
+- a developer-specific path indicator;
 - no real credentials.
 
-A separate `examples/clean-python/` fixture will contain the corrected, bounded P0 evidence. These fixtures must be added only during implementation.
+A separate committed `examples/clean-python/` fixture contains corrected, bounded P0 evidence. `tests/test_phase6_m6_examples.py` audits both fixtures through the real CLI and verifies that static inspection does not modify them.
 
 ## 4. Demo command and sequence
 
-Planned command:
+Defective-fixture command:
 
 ```text
-coldstart audit examples/defective-python --format terminal
+PYTHONPATH=src python -m coldstart audit examples/defective-python --format terminal
 ```
 
 Sequence:
@@ -42,7 +42,7 @@ Sequence:
 4. Explain the distinction between `failed`, `not_applicable`, and `not_verified`.
 5. Show the remediation guidance.
 6. Correct the fixture in a separate committed change or prepared branch.
-7. Re-run the actual command against `examples/clean-python` or the corrected fixture.
+7. Run the actual command against `examples/clean-python`.
 8. Show that the findings changed, while any unexecuted test/Docker verification remains `not_verified`.
 
 P1 optional segment, using the implemented plan/authorization flow:
@@ -78,7 +78,7 @@ The correction should add only the evidence needed by the finding: align the run
 - [ ] No secrets, local paths, virtual environments, build outputs, or generated reports are committed unintentionally.
 - [ ] Pinned runtime and lockfiles are tracked.
 - [ ] Dockerfile and `make test` work from a clean checkout.
-- [ ] Defective and clean fixtures are included and documented.
+- [x] Defective and clean fixtures are included and documented.
 - [ ] Issue/PR templates do not promise unsupported features.
 
 ## 8. Docker and offline checklist
