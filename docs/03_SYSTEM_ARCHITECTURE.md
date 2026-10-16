@@ -1,7 +1,7 @@
 # ColdStart System Architecture
 
-**Status:** Proposed for approval
-**Version:** 0.2
+**Status:** P0 approved; M6 execution boundary implemented in a bounded first slice
+**Version:** 0.3
 **Architectural target:** P0 deterministic static auditor with a P1 execution extension
 
 ## 1. System overview
@@ -15,14 +15,14 @@ CLI input → boundary validation → bounded discovery → project detection
 → policy/exit calculation → terminal or JSON report
 ```
 
-The P1 verification layer is intentionally separate:
+The P1 verification layer is intentionally separate and is implemented first as a bounded broker:
 
 ```text
 static report → proposed execution plan → explicit approval
 → constrained runner → execution receipt → merged report
 ```
 
-The repository under audit is untrusted input. No P0 component may execute a project-derived command. The P1 runner is the only component permitted to launch a project process, and it is not available implicitly.
+The repository under audit is untrusted input. No P0 component may execute a project-derived command. The P1 runner is the only component permitted to launch a project process, and it is not available implicitly. The current runner accepts only direct Python `unittest`/`pytest` argv or a fixed Docker build argv; shell recipes and arbitrary scripts are rejected.
 
 ## 2. Component diagram
 
@@ -109,7 +109,7 @@ src/coldstart/
 ├── findings/            # evidence, statuses, severity, normalization
 ├── reporting/           # terminal and JSON serializers
 ├── policy/              # configured thresholds and exit code calculation
-├── execution/           # P1 plan, authorization, broker, Docker runner
+├── execution.py         # P1 plan, authorization, bounded broker, receipts
 └── version.py           # tool, schema, and catalog versions
 tests/
 ├── unit/
@@ -140,7 +140,7 @@ tests/
 1. `checks` may depend on `discovery`, `boundary` data types, and `findings`; it may not depend on `cli`, `reporting`, or `execution`.
 2. `reporting` depends on normalized findings and contract definitions; it may not parse repository files.
 3. `policy` depends on findings and configuration; it may not read repository files.
-4. `execution` depends on the plan, authorization, boundary/staging, and receipt types; it may not be invoked by a static rule.
+4. `execution` depends on the plan, authorization, boundary/staging, and receipt types; it may not be invoked by a static rule. The CLI invokes it only for the distinct `verify` command after a plan is built.
 5. `cli` is the composition root and may depend on all public interfaces, but it contains no rule algorithms.
 6. No module imports the target repository as Python code.
 
@@ -201,7 +201,7 @@ The optional `.coldstart.toml` file controls policy, bounded limits, exclusions,
 
 ## 14. Dependency and runtime strategy
 
-The recommended P0 runtime uses Python 3.12.8 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling may use pinned `pytest` and `ruff`. A committed, hash-pinned dependency lockfile and a Dockerfile are release gates. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md` and are planned until implementation begins.
+The recommended P0 runtime uses Python 3.12.8 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling may use pinned `pytest` and `ruff`. A committed, hash-pinned dependency lockfile and a Dockerfile are release gates. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md`; the target-runtime and Docker gates remain unverified in the current workspace.
 
 The design avoids a general plugin marketplace. New checks are ordinary reviewed modules registered in one check catalog until the MVP demonstrates a need for a more extensible interface. A later `explain` command reads the same catalog metadata rather than introducing an AI explanation path.
 
@@ -213,7 +213,7 @@ The static CLI targets pinned Python 3.12.8 on Linux, Windows, and macOS. The cl
 
 - Discovery and rules accept fixture data instead of global process state.
 - Report serialization is contract-tested independently of rendering.
-- The execution broker has a fake runner for safe unit tests and a Docker integration runner for authorized tests.
+- The execution broker has bounded fixture tests for denial, plan-only behavior, authorization, timeout, output, source-manifest comparison, and Docker unavailability. Docker-enabled integration and a network-isolated test runner remain target-environment work.
 - Security tests can substitute process and filesystem observers.
 - Fixtures are deliberately clean, defective, malformed, large, symlinked, and secret-bearing.
 

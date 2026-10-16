@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2/M3/M4/M5 implemented and tested; target/P1 execution remains specified
-**Version:** 0.6
+**Status:** M1/M2/M3/M4/M5 and the first M6 verification slice implemented and tested; target execution gates remain open
+**Version:** 0.7
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. P1 execution requirements remain separate and unverified.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. M6 implements the first explicit plan/authorization/receipt slice for P1 verification; target-runtime, Docker-enabled, and network-isolated execution remain unverified.
 
 ## 1. Functional requirements
 
@@ -137,3 +137,16 @@ M5 adds `tests/test_phase5_m5_hardening.py`, covering:
 - malicious-fixture non-execution and control-like/secret-shaped evidence handling.
 
 The M5 module has 7 passing tests under Python 3.14.7. The integrated offline suite has 101 passing tests with 3 platform-expected skips. Exact Python 3.12.8, GNU Make, Docker, clean Linux, and authorized project test/build execution remain unverified.
+
+## 10. M6 verification slice
+
+M6 adds `src/coldstart/execution.py`, the distinct `verify` CLI command, receipt rendering, and:
+
+- `verify --plan` with no child-process launch;
+- explicit `--authorize` gating and denied receipts;
+- structured direct Python `unittest`/`pytest` argv validation without shell execution;
+- bounded timeout/output capture, source-manifest comparison, cleanup status, and safe receipt redaction;
+- fixed Docker build planning and truthful Docker-unavailable receipts;
+- fail-closed handling for `tests --offline` because the current host runner cannot enforce network isolation for a direct test process.
+
+Coverage is provided by `tests/test_phase6_m6_execution.py` (8 tests) and `tests/test_phase6_m6_cli.py` (5 tests). The latest integrated suite has 114 passing tests with 3 platform-expected skips under Python 3.14.7. This is not evidence for Python 3.12.8, Make, Docker-enabled builds, or a clean Linux environment.

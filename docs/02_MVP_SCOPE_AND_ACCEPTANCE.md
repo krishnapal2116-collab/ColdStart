@@ -1,7 +1,7 @@
 # ColdStart MVP Scope and Acceptance
 
-**Status:** Proposed for approval
-**Version:** 0.2
+**Status:** P0 approved; M6 P1 verification slice is implemented with target-environment limits
+**Version:** 0.3
 **MVP principle:** Ship a reliable Python-focused static auditor before adding execution or ecosystem breadth.
 
 ## 1. Priority levels
@@ -85,9 +85,10 @@ The configured policy decides whether failed or `not_verified` checks block the 
 ```text
 coldstart verify ./project --kind tests --offline
 coldstart verify ./project --kind docker-build
+coldstart verify ./project --kind tests --authorize
 ```
 
-These commands first print a plan, require explicit authorization, and return a truthful receipt. If Docker is unavailable, the static audit remains useful and the verification status is `not_verified`.
+These commands first print a plan. `--plan` previews without a child process, and `--authorize` is required before a supported test or Docker process starts. The current direct host test runner cannot enforce network isolation, so an authorized `--offline` test attempt is `not_verified`; if Docker is unavailable, the static audit remains useful and the Docker verification status is `not_verified`.
 
 ## 3. Required command set
 

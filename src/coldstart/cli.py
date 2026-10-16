@@ -15,6 +15,8 @@ from .boundary import (
     validate_output_path,
 )
 from .execution import (
+    MAX_OUTPUT_LIMIT_BYTES,
+    MAX_TIMEOUT_SECONDS,
     ExecutionValidationError,
     build_execution_plan,
     execute_execution_plan,
@@ -315,6 +317,18 @@ def _run_verify(args: argparse.Namespace) -> int:
     plan_only = bool(args.plan)
     authorize = bool(args.authorize)
     try:
+        if args.verify_timeout <= 0:
+            raise ExecutionValidationError("timeout must be a positive integer")
+        if args.verify_timeout > MAX_TIMEOUT_SECONDS:
+            raise ExecutionValidationError(
+                f"timeout exceeds the safe maximum of {MAX_TIMEOUT_SECONDS}"
+            )
+        if args.verify_output_limit <= 0:
+            raise ExecutionValidationError("output-limit must be a positive integer")
+        if args.verify_output_limit > MAX_OUTPUT_LIMIT_BYTES:
+            raise ExecutionValidationError(
+                f"output-limit exceeds the safe maximum of {MAX_OUTPUT_LIMIT_BYTES}"
+            )
         output_path = validate_output_path(output)
         static_result = run_audit(
             args.path,

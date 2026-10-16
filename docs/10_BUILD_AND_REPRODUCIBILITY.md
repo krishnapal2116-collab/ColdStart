@@ -1,7 +1,7 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Phase 5 offline hardening and self-audit verified under the available interpreter; target-runtime/build verification pending
-**Version:** 0.6
+**Status:** Phase 6 verification slice tested under the available interpreter; target-runtime/build verification pending
+**Version:** 0.7
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
 ## 1. Purpose
@@ -141,7 +141,7 @@ ColdStart P0 reads no required secret environment variables. Optional debug sett
 - [x] Available-environment output and exit codes are recorded; unavailable target-tool outcomes remain open.
 - [ ] No unsupported “fully reproducible everywhere” claim appears.
 
-## 13. M1/M2/M3/M4/M5 verification record
+## 13. M1/M2/M3/M4/M5/M6 verification record
 
 The following checks were actually run in the current workspace:
 
@@ -161,6 +161,11 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M4 integration — 94 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase5_m5_hardening -v` — 7 M5 hardening/self-audit tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M5 hardening — 101 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase6_m6_execution tests.test_phase6_m6_cli -v` — 13 M6 tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M6 — 114 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --plan --format json` — exited `0`, produced a plan with structured argv, `network_mode=none`, explicit authorization requirement, and no execution receipt.
+- `PYTHONPATH=src python -m coldstart verify . --kind docker-build --offline --authorize --format json` — exited `3`, produced a truthful `not_verified` receipt because Docker is unavailable; no host fallback was attempted.
+- `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --authorize --format json` — direct host offline execution is fail-closed and returns `not_verified` because network isolation is not enforceable by the current runner.
 - `PYTHONPATH=src python -m coldstart audit . --format terminal` — exited `0`, reported a high-confidence Python candidate, bounded inventory with no staging, all 13 catalog IDs, and bounded `not_verified` evidence for oversized/dynamic local files.
 - `python -m compileall -q src build_backend tests` after M5 hardening — passed under Python 3.14.7.
 - `git diff --check` after M5 hardening — passed.
@@ -175,3 +180,4 @@ The following target checks remain unverified because the current machine does n
 - Python 3.12.8 (`python3.12` and `py -3.12` were unavailable).
 - GNU Make (`make` was unavailable).
 - Docker (`docker` was unavailable).
+- Network-isolated direct test execution (the M6 host runner reports `not_verified` instead of claiming `--offline` enforcement).

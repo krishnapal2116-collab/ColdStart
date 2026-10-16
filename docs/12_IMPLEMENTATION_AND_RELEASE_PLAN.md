@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 5 offline hardening/self-audit implemented; target verification pending
-**Version:** 0.6
+**Status:** Phase 6 first P1 verification slice implemented; target verification pending
+**Version:** 0.7
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, Phase 3/M3/M4 static check slices, and Phase 5 offline hardening/self-audit coverage are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, Phase 3/M3/M4 static check slices, Phase 5 offline hardening/self-audit coverage, and the first Phase 6 explicit verification slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Direct host network isolation for `--offline` tests is also unavailable, so exact target-runtime, Make, Docker, and network-isolated acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -127,17 +127,18 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M6 — Optional P1 verification layer
 
-**Next implementation slice:** M6 is the next planned step after M5 closeout, only when a Docker-enabled Python 3.12.8 environment is available.
+**Current state:** First bounded verification slice implemented and tested under Python 3.14.7. Plan-only preview, explicit authorization, safe direct Python test execution, bounded receipts, timeout/cleanup, source-manifest comparison, fixed Docker planning, and Docker-unavailable semantics are present. Network-isolated host tests, Python 3.12.8, Docker-enabled builds, and clean Linux remain pending.
 
 - **Goal:** Add explicit offline test and clean Docker build verification without changing P0 safety.
 - **Requirements:** FR-018, FR-019, NFR-013, NFR-014.
-- **Expected files/modules:** `execution` broker, plan/authorization, staging, Docker runner, receipts, P1 fixtures.
+- **Expected files/modules:** `src/coldstart/execution.py`, CLI verification flow, report receipt rendering, staging, Docker runner, receipts, P1 fixtures.
 - **Dependencies:** M5; Docker-enabled environment; threat-model review.
-- **Tasks:** Implement plan-only preview first, then structured argv, approval prompt, network/resource/output limits, timeout/cleanup, manifest comparison, and Docker build attempt.
-- **Tests:** Authorization denial, pass/fail, timeout, network deny, Docker unavailable, cleanup, source unchanged.
-- **Acceptance:** No execution occurs without explicit plan/approval; actual results are recorded.
+- **Tasks:** Implemented plan-only preview, structured argv, explicit `--authorize`, resource/output limits, timeout/cleanup, manifest comparison, fixed Docker build planning, and unavailable receipts. Next add a genuinely network-isolated test runner and execute the Docker-enabled path in the target environment.
+- **Tests:** Authorization denial, plan-only no-child, authorized pass, timeout, host-network isolation refusal, Docker unavailable, cleanup, source unchanged, and CLI report integration.
+- **Acceptance:** No execution occurs without explicit authorization; actual attempts record bounded receipts; unsupported network isolation is `not_verified`, never a pass.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
-- **Git checkpoint:** `feat: add authorized Docker verification`.
+- **Verification:** 8 M6 execution tests and 5 M6 CLI tests pass; integrated suite has 114 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and network-isolated test execution remain blocked or unavailable in the environment.
+- **Git checkpoints:** `b54c468 feat: add authorized verification flow`; `adc98db fix: keep offline tests fail-closed`.
 - **Relative effort:** Very large; omit if it threatens P0.
 
 ### M7 — Optional advanced improvements

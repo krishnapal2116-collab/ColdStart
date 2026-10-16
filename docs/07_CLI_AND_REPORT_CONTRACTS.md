@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1/M2/M3/M4 contract implemented; P1 execution contract remains separate
-**Version:** 0.5
+**Status:** M1/M2/M3/M4/M5 contract implemented; M6 verification/receipt slice implemented with target gates open
+**Version:** 0.6
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation
@@ -20,11 +20,12 @@ P1 verification invocations are reserved until the P0 audit is stable:
 coldstart verify REPOSITORY_PATH --kind tests --offline
 coldstart verify REPOSITORY_PATH --kind docker-build
 coldstart verify REPOSITORY_PATH --kind tests --plan
+coldstart verify REPOSITORY_PATH --kind tests --authorize
 coldstart explain CHECK_ID
 coldstart compare CURRENT_REPORT BASELINE_REPORT
 ```
 
-The P0 `audit` command never executes repository code. `verify` is a distinct command and must not be implemented as a hidden side effect of `audit`.
+The P0 `audit` command never executes repository code. `verify` is a distinct command and is not a hidden side effect of `audit`. `--plan` never starts a child process. A child process requires the explicit `--authorize` flag; without it, the command records a denied receipt and returns exit code `3`.
 
 ## 2. Global options
 
@@ -63,7 +64,7 @@ Help is plain text, available without a repository, and includes safe examples. 
 - report schema version;
 - P0 check-catalog version;
 - supported primary project type (`python`);
-- whether P1 Docker verification is compiled/available, without claiming it ran.
+- whether the optional P1 runner is available, without claiming that a verification ran.
 
 ## 5. Standard streams and output behavior
 
@@ -81,7 +82,7 @@ Help is plain text, available without a repository, and includes safe examples. 
 | `0` | `OK` | Audit completed; no failed/error result violates the active policy. `not_applicable`, `skipped`, and `not_verified` remain visible and are not passes. |
 | `1` | `FINDINGS` | Audit completed with a failed/error finding or policy violation. |
 | `2` | `USAGE` | Invalid arguments, path, configuration, or output selection; no project execution. |
-| `3` | `INCOMPLETE` | Audit coverage or an explicitly requested verification could not complete due to limits, denial, unavailable capability, or cancellation. |
+| `3` | `INCOMPLETE` | Audit coverage or an explicitly requested verification could not complete due to limits, denial, unavailable capability, unsupported host network isolation, or cancellation. |
 | `4` | `INTERNAL` | ColdStart internal error; the report is incomplete or unavailable. |
 
 `--strict` may promote configured `not_verified` results to `1` rather than `0`, but it never hides the original status. A `skipped` or `not_applicable` check is not a pass and is counted separately in the report.
@@ -208,10 +209,10 @@ The major report schema version changes when required fields or status meaning c
 
 ## 13. P1 execution receipt contract
 
-When implemented, every P1 attempt contains:
+The M6 runner implements the first bounded form of this contract. Every P1 attempt contains:
 
 - `execution_id`, kind, authorization state, and candidate source;
-- safe argv/build request and staged working directory label;
+- safe structured argv/build request and repository working-directory label;
 - network mode and resource/time/output limits;
 - observed exit code or termination reason;
 - output truncation/digest state;
@@ -219,6 +220,8 @@ When implemented, every P1 attempt contains:
 - actual result status and limitation.
 
 No receipt with no observed execution may claim `passed`.
+
+The current runner accepts only direct Python `unittest`/`pytest` commands or a fixed Docker build command; shell operators, arbitrary scripts, Make recipes, and absolute command paths are rejected. Docker `--offline` plans use Docker's `--network=none`. Direct host test execution cannot enforce network isolation yet, so an authorized `tests --offline` attempt returns `not_verified` without starting the test process.
 
 ## 14. Advanced P1 command contracts
 
@@ -236,4 +239,4 @@ The `beginner`, `strict`, and `ci` profiles are policy presets. They may change 
 
 ### `verify --plan`
 
-The plan-only flag renders the proposed P1 operation and constraints, returns without launching a child process, and records no execution receipt claiming that a command ran.
+The plan-only flag renders the proposed P1 operation and constraints, returns without launching a child process, and records no execution receipt claiming that a command ran. Use `--authorize` only after reviewing that plan.

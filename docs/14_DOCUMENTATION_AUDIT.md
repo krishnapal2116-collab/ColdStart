@@ -1,8 +1,8 @@
 # ColdStart Documentation Quality Audit
 
-**Status:** Completed through Phase 5 hardening closeout; target-runtime/build gates remain open
-**Version:** 0.6
-**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4/M5 implementation state
+**Status:** Completed through Phase 6 verification-slice closeout; target-runtime/build gates remain open
+**Version:** 0.7
+**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4/M5/M6 implementation state
 
 ## 1. Audit objective
 
@@ -29,7 +29,7 @@ Review the specification as an independent engineering pass. The audit must find
 
 The following checks were run after the document pack was written:
 
-- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, and M4 complete catalog modules are present; P1 execution remains separate.
+- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, M4 complete catalog modules, and the M6 execution/CLI slice are present; target-runtime and Docker-enabled execution remain separate.
 - `git diff --check` and `git log --check --oneline --all`: passed.
 - Unique requirement-ID validation: 49 unique IDs (34 functional and 15 non-functional) in the requirements document.
 - Requirement traceability: all 49 requirement IDs are present in the traceability matrix; all 33 P0 requirements have planned acceptance tests.
@@ -44,6 +44,7 @@ The following checks were run after the document pack was written:
 - Phase 3/M3 verification record: dependency declaration, applicable lockfile, runtime declaration, setup-documentation, non-Python applicability, policy exclusion, fingerprint, integration, and no-execution cases were exercised; the M3 tests ran 26 tests successfully.
 - Phase 3/M4 verification record: test-command documentation, configuration examples, environment-variable documentation, portability, secret-safe security indicators, container discovery, contained paths, complete-catalog integration, policy exclusions, and no-execution cases were exercised; the M4 tests ran 37 cases successfully with 1 platform-expected symlink skip.
 - Phase 5/M5 verification record: complete self-audit catalog coverage, repeated fingerprint stability, report-contract enums, terminal/JSON parity, release-file checks, malicious-fixture non-execution, redaction, and control-like input handling were exercised; the M5 tests ran 7 cases successfully.
+- Phase 6/M6 verification record: plan-only no-child behavior, explicit authorization/denial, safe structured Python test execution, timeout termination, bounded output, source-manifest comparison, Docker-unavailable behavior, receipt redaction, invalid-limit handling, and CLI terminal/JSON integration were exercised; 13 M6 tests ran successfully. Direct host `--offline` tests fail closed as `not_verified` because network isolation is not enforceable in the current runner.
 
 ## 4. Quality review
 
@@ -72,14 +73,14 @@ The review found and handled these items:
 2. **Medium — scope drift:** The earlier pack described Python and Node.js as first-class. The new brief prioritizes Python. P0 is now Python-focused; additional ecosystems are P1 and conditional on P0 stability.
 3. **Low — status terminology:** Natural-language variants such as “not-verified” were aligned to the contract status `not_verified` where they described a result state.
 4. **Low — severity ambiguity:** `CS-SEC-001` now has default severity `error`, escalating to `blocking` for private-key material.
-5. **Open, medium — build evidence:** Python 3.12.8 setup, lockfile installation, `make test`, Docker build, and clean-checkout commands are specified but not executed because implementation is prohibited in this phase. Impact: ColdStart cannot yet claim that it builds or passes tests.
+5. **Open, medium — build evidence:** Python 3.12.8 setup, lockfile installation, `make test`, Docker build, and clean-checkout commands are specified but not executed because the required tools are unavailable on the current machine. Impact: ColdStart cannot yet claim that it builds or passes target-environment tests.
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
-8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, profiles, and plan-only verification remain P1 and are explicitly optional.
-9. **Informational — Phase 1/M1/M2/M3/M4/M5 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, complete P0 static catalog, and available-environment hardening/self-audit coverage are present. Exact Python 3.12.8, Make, Docker, clean-build, and authorized project test/build evidence is unavailable on the current machine.
+8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, and profiles remain P1; plan-only verification is implemented in the bounded M6 slice and remains explicitly optional.
+9. **Informational — Phase 1/M1/M2/M3/M4/M5/M6 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, complete P0 static catalog, available-environment hardening/self-audit coverage, and bounded explicit verification slice are present. Exact Python 3.12.8, Make, Docker, clean-build, network-isolated, and Docker-enabled authorized project test/build evidence is unavailable on the current machine.
 
-No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize implementation.
+No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize claims that unavailable target checks passed.
 
 ## 6. Completion rule
 
-The documentation audit is complete through Phase 5 because all blocking contradictions were corrected, M5 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. P1 execution and target-runtime/build gates remain future work and must not be reported as passed before actual execution.
+The documentation audit is complete through Phase 6 because all blocking contradictions were corrected, M6 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. Network-isolated execution, Docker-enabled verification, and target-runtime/build gates remain future work and must not be reported as passed before actual execution.

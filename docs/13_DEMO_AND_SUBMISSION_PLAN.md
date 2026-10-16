@@ -45,13 +45,14 @@ Sequence:
 7. Re-run the actual command against `examples/clean-python` or the corrected fixture.
 8. Show that the findings changed, while any unexecuted test/Docker verification remains `not_verified`.
 
-P1 optional segment, only if actually implemented and run:
+P1 optional segment, using the implemented plan/authorization flow:
 
 ```text
-coldstart verify examples/clean-python --kind tests --offline
+coldstart verify examples/clean-python --kind tests --offline --plan
+coldstart verify examples/clean-python --kind tests --offline --authorize
 ```
 
-Show the proposed plan and explicit approval. If Docker is unavailable or execution is not included in the release, state that honestly instead of simulating a pass.
+Show the proposed plan and explicit approval. The current host runner reports an authorized offline test as `not_verified` until network isolation is available. If Docker is unavailable or execution is not included in the release, state that honestly instead of simulating a pass.
 
 ## 5. Correction story
 

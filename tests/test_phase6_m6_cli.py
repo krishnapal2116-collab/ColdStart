@@ -176,6 +176,26 @@ class Phase6M6CliTests(unittest.TestCase):
         self.assertIn("Execution receipt: status=denied", result.stdout)
         self.assertNotIn("\x1b[", result.stdout)
 
+    def test_invalid_verification_limit_is_usage_error_without_a_report(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-cli-limit-") as temporary:
+            parent = Path(temporary)
+            repository = fixture_repository(parent)
+
+            result = run_cli(
+                "verify",
+                str(repository),
+                "--kind",
+                "tests",
+                "--timeout",
+                "0",
+                "--format",
+                "json",
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("positive integer", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
