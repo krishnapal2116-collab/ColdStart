@@ -519,9 +519,16 @@ class ExecutionReceipt:
             },
         }
         source_manifest = {
+            "before": self.source_manifest_before,
+            "after": self.source_manifest_after,
             "before_digest": self.source_manifest_before,
             "after_digest": self.source_manifest_after,
             "unchanged": self.source_manifest_unchanged,
+            "changed": (
+                None
+                if self.source_manifest_unchanged is None
+                else not self.source_manifest_unchanged
+            ),
             "comparison": self.manifest_comparison,
         }
         return {
@@ -556,6 +563,7 @@ class ExecutionReceipt:
             "source_manifest_after": self.source_manifest_after,
             "source_manifest_unchanged": self.source_manifest_unchanged,
             "manifest_unchanged": self.source_manifest_unchanged,
+            "source_unchanged": self.source_manifest_unchanged,
             "manifest_comparison": self.manifest_comparison,
             "output": output,
             "stdout_digest": self.stdout_digest,
