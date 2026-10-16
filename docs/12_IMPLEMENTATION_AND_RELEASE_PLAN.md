@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 3/M3 static check slice implemented; target verification pending
-**Version:** 0.4
+**Status:** Phase 3/M4 complete P0 static catalog implemented; target verification pending
+**Version:** 0.5
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, and Phase 3/M3 static check slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, and Phase 3/M3/M4 static check slices are present, but the current machine lacks Python 3.12.8, Make, and Docker. Therefore exact target-runtime, Make, and Docker acceptance remain unverified.
 
 ## 2. Milestone method
 
@@ -95,20 +95,23 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M4 — Remaining catalog and release reports
 
-**Next implementation slice:** M4 is the next planned step after M3 closeout.
+**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, Docker, and authorized project verification remain pending.
 
-- **Goal:** Complete P0 documentation/configuration/path/security/container-discovery checks and polished reports.
+- **Goal:** Complete the P0 documentation/configuration/path/security/container-discovery checks and expose the complete static catalog in reports.
 - **Requirements:** FR-005, FR-008, FR-009, FR-010, FR-011, FR-012, FR-016; NFR-003, NFR-008.
 - **Expected files/modules:** remaining `checks`, redaction, terminal formatting, JSON schema validator/fixtures, report docs.
 - **Dependencies:** M3.
-- **Tasks:** Add remaining checks, status counts, no-color output, secret-safe evidence, policy/strict behavior.
-- **Tests:** Full catalog matrix, secret/path/control-character tests, terminal/JSON parity, exit matrix.
-- **Acceptance:** All 13 P0 checks appear with correct applicability/status and remediation.
+- **Tasks:** Add remaining checks, status counts, no-color output, secret-safe evidence, policy/strict behavior, and complete catalog integration.
+- **Tests:** Full catalog matrix, secret/path/control-character tests, terminal/JSON parity, exclusion visibility, redaction, and exit matrix.
+- **Acceptance:** All 13 P0 checks appear exactly once with correct applicability/status and remediation; no static pass claims that a test/build executed.
 - **Failure conditions:** Secret leakage, hidden skipped checks, schema mismatch, or report overclaim.
+- **Verification:** 38 M4 tests ran with 37 passes and 1 platform-expected symlink skip; integrated suite has 94 passes with 3 platform-expected skips.
 - **Git checkpoint:** `feat: complete P0 reproducibility report`.
 - **Relative effort:** Large.
 
 ### M5 — P0 hardening and clean release candidate
+
+**Next implementation slice:** M5 is the next planned step after M4 closeout.
 
 - **Goal:** Demonstrate the small working product under competition constraints.
 - **Requirements:** All P0 FR/NFR; especially FR-013–017, FR-028–030, NFR-001–012, and NFR-015.

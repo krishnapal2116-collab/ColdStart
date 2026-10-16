@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2/M3 implemented and tested; later catalog slices remain specified
-**Version:** 0.4
+**Status:** M1/M2/M3/M4 implemented and tested; P1 execution remains specified
+**Version:** 0.5
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. The remaining P0 catalog rule rows remain future work.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. P1 execution requirements remain separate and unverified.
 
 ## 1. Functional requirements
 
@@ -103,7 +103,7 @@ The following requirements now have implementation and test evidence in the M2 s
 - `NFR-005`, `NFR-006`, `NFR-007`, and `NFR-012` — partial-coverage findings, file/byte/depth/time bounds, exclusion and symlink handling, and report provenance for limits, policy, inventory, detection, applicability, and limitations.
 - M2 report behavior is covered by `tests/test_phase3_m2_discovery.py`: 19 tests, with 17 executed successfully and 2 platform-expected skips on the current Windows environment.
 
-The integrated offline command currently passes 57 executed tests with 2 platform-expected skips under Python 3.14.7. M2 exposes bounded discovery and applicability; M3 evaluates `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`. The remaining P0 catalog rules, including `CS-DOCS-002`, remain `not_verified`. Python 3.12.8, Make, Docker, and clean-Linux verification remain unverified.
+The integrated offline command currently passes 94 executed tests with 3 platform-expected skips under Python 3.14.7. M2 exposes bounded discovery and applicability; M3 evaluates `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`; M4 evaluates the remaining seven catalog checks. Python 3.12.8, Make, Docker, clean-Linux verification, and P1 project test/build execution remain unverified.
 
 ## 7. M3 implementation state
 
@@ -113,4 +113,14 @@ The following requirements now have implementation and test evidence in the M3 s
 - `NFR-012` for M3 rule versions, applicability, evidence, remediation, limitations, and report provenance.
 - M3 coverage is provided by `tests/test_phase3_m3_dependencies.py`, `tests/test_phase3_m3_runtime_docs.py`, and `tests/test_phase3_m3_integration.py`: 26 tests passed under Python 3.14.7.
 
-M3 does not implement `CS-DOCS-002` or the remaining configuration, portability, security, and build-discovery checks. Exact Python 3.12.8, Make, Docker, and clean-Linux verification remain open.
+The M3 slice by itself did not implement `CS-DOCS-002` or the remaining configuration, portability, security, and build-discovery checks; M4 now supplies those static findings. Exact Python 3.12.8, Make, Docker, and clean-Linux verification remain open.
+
+## 8. M4 implementation state
+
+The following requirements now have implementation and test evidence in the M4 slice:
+
+- `FR-005`, `FR-008`, `FR-016`, and `FR-027` for test-command documentation, configuration examples, environment-variable documentation, portability indicators, redacted security indicators, container configuration discovery, and repository-contained path validation.
+- `NFR-003`, `NFR-008`, and `NFR-012` for secret-safe evidence, plain terminal/JSON visibility, bounded redaction, applicability, remediation, and report provenance.
+- M4 coverage is provided by `tests/test_phase4_m4_docs_config.py`, `tests/test_phase4_m4_quality.py`, and `tests/test_phase4_m4_integration.py`: 38 tests, with 37 executed successfully and one platform-expected symlink skip on the current Windows environment.
+
+All 13 P0 catalog IDs now produce one static finding each in a complete report. A static result does not claim that a project test or container build executed; those remain P1 verification work.

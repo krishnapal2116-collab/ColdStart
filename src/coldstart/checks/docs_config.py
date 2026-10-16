@@ -185,7 +185,7 @@ _CONFIG_FILE_REFERENCE = re.compile(
     re.IGNORECASE,
 )
 _NO_CONFIGURATION = re.compile(
-    r"\bno\s+(?:runtime\s+)?configuration\s+(?:is\s+)?required\b|"
+    r"\bno\s+(?:(?:external|runtime|additional)\s+)?configuration\s+(?:is\s+)?required\b|"
     r"\bwithout\s+(?:any\s+)?configuration\b",
     re.IGNORECASE,
 )
@@ -775,17 +775,39 @@ def _parse_simple_command(fragment: str) -> tuple[str, str] | None:
     return None
 
 
-def _shell_signal(analysis: _Analysis, path: str, line: int, digest: str | None) -> None:
+def _shell_signal(
+    analysis: _Analysis,
+    path: str,
+    line: int,
+    digest: str | None,
+    *,
+    family: str | None = None,
+) -> None:
+    family_detail = f" test_family={family}." if family else ""
     _add_signal(
         analysis.shell_commands,
         _Signal(
             path=path,
             line=line,
             kind="command",
-            detail="A bounded test-like command contains unsupported shell composition; it was not treated as an executable candidate.",
+            detail=(
+                "A bounded test-like command contains unsupported shell composition; "
+                f"it was not treated as an executable candidate.{family_detail}"
+            ),
             digest=digest,
         ),
     )
+
+
+def _test_family_in_shell_command(fragment: str) -> str | None:
+    lowered = fragment.casefold()
+    if re.search(r"\b(?:python(?:\d+(?:\.\d+)?)?\s+-m\s+)?unittest\b", lowered):
+        return "unittest"
+    if re.search(r"\bpytest\b", lowered):
+        return "pytest"
+    if re.search(r"\b(?:tox|nox)\b", lowered):
+        return "tox"
+    return None
 
 
 def _command_fragments(path: str, text: str, source_kind: str) -> tuple[tuple[int, str], ...]:
@@ -808,11 +830,15 @@ def _command_fragments(path: str, text: str, source_kind: str) -> tuple[tuple[in
             if inline:
                 if not (_SHELL_OPERATOR.search(line) and _TEST_TOKEN.search(line)):
                     fragments.extend((line_number, item) for item in inline)
+                else:
+                    fragments.append((line_number, " ".join(inline)))
             elif in_fence and stripped:
                 fragments.append((line_number, stripped))
             else:
                 command_line = re.sub(r"^(?:[-*]|\d+[.)])\s+", "", stripped)
-                if _COMMAND_START.match(command_line):
+                if _SHELL_OPERATOR.search(command_line) and _TEST_TOKEN.search(command_line):
+                    fragments.append((line_number, command_line))
+                elif _COMMAND_START.match(command_line):
                     fragments.append((line_number, command_line))
             continue
 
@@ -840,7 +866,13 @@ def _extract_line_commands(
 ) -> None:
     for line_number, fragment in _command_fragments(path, text, source_kind):
         if _SHELL_OPERATOR.search(fragment) and _TEST_TOKEN.search(fragment):
-            _shell_signal(analysis, path, line_number, digest)
+            _shell_signal(
+                analysis,
+                path,
+                line_number,
+                digest,
+                family=_test_family_in_shell_command(fragment),
+            )
             if source_kind != "docs":
                 _test_signal(
                     analysis,
@@ -1911,6 +1943,28 @@ def _test_command_finding(analysis: _Analysis) -> Finding:
     evidence.extend(_evidence(item) for item in analysis.shell_commands[:MAX_EVIDENCE])
 
     if not commands:
+        if any("test_family=unittest" in item.detail for item in analysis.shell_commands):
+            evidence.append(
+                Evidence(
+                    kind="absence",
+                    path=None,
+                    detail="The documented unittest workflow uses unsupported shell composition and cannot be verified as one portable command.",
+                )
+            )
+            return Finding(
+                check_id=check_id,
+                severity="warning",
+                status="not_verified",
+                title=title,
+                message="The documented unittest workflow contains unsupported shell composition, so its test command was not verified.",
+                evidence=tuple(evidence[:MAX_EVIDENCE]),
+                remediation="Document the unittest command without shell chaining or other unsupported composition.",
+                affected_path=analysis.shell_commands[0].path,
+                category=category,
+                applicability=Applicability(applicable=True, reason="Test files or test workflow metadata indicate a test-bearing repository.", adapter="generic"),
+                rule_version=RULE_VERSION,
+                evidence_strength="unverified",
+            )
         evidence.append(
             Evidence(
                 kind="absence",

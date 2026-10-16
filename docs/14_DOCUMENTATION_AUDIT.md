@@ -1,8 +1,8 @@
 # ColdStart Documentation Quality Audit
 
-**Status:** Completed through Phase 3/M3 closeout; target-runtime/build gates remain open
-**Version:** 0.4
-**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3 implementation state
+**Status:** Completed through Phase 3/M4 closeout; target-runtime/build gates remain open
+**Version:** 0.5
+**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4 implementation state
 
 ## 1. Audit objective
 
@@ -29,7 +29,7 @@ Review the specification as an independent engineering pass. The audit must find
 
 The following checks were run after the document pack was written:
 
-- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, and M3 static check modules are present; the remaining P0 catalog rule engine is not yet implemented.
+- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, and M4 complete catalog modules are present; P1 execution remains separate.
 - `git diff --check` and `git log --check --oneline --all`: passed.
 - Unique requirement-ID validation: 49 unique IDs (34 functional and 15 non-functional) in the requirements document.
 - Requirement traceability: all 49 requirement IDs are present in the traceability matrix; all 33 P0 requirements have planned acceptance tests.
@@ -42,6 +42,7 @@ The following checks were run after the document pack was written:
 - Phase 1/M1 verification record: standard-library CLI tests, help/version smoke checks, boundary/report/fingerprint integration tests, safe non-execution checks, compileall, and a dependency-free wheel smoke check were run under Python 3.14.7; Python 3.12.8, Make, and Docker remain unavailable.
 - Phase 3/M2 verification record: bounded inventory limits, exclusions, symlink handling, Python/Node/unknown/mixed detection, fail-closed policy parsing, applicability planning, skipped-check visibility, deterministic reports, read-only behavior, and incomplete-coverage exit behavior were exercised; the integrated suite ran 31 tests successfully with 2 platform-expected skips.
 - Phase 3/M3 verification record: dependency declaration, applicable lockfile, runtime declaration, setup-documentation, non-Python applicability, policy exclusion, fingerprint, integration, and no-execution cases were exercised; the M3 tests ran 26 tests successfully.
+- Phase 3/M4 verification record: test-command documentation, configuration examples, environment-variable documentation, portability, secret-safe security indicators, container discovery, contained paths, complete-catalog integration, policy exclusions, and no-execution cases were exercised; the M4 tests ran 37 cases successfully with 1 platform-expected symlink skip.
 
 ## 4. Quality review
 
@@ -74,10 +75,10 @@ The review found and handled these items:
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
 8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. Baseline/diff, `explain`, profiles, and plan-only verification remain P1 and are explicitly optional.
-9. **Informational — Phase 1/M1/M2/M3 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, and first static check slice are present. Exact Python 3.12.8, Make, Docker, and clean-build evidence is unavailable on the current machine; the remaining P0 catalog rules remain unimplemented.
+9. **Informational — Phase 1/M1/M2/M3/M4 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, and complete P0 static catalog are present. Exact Python 3.12.8, Make, Docker, clean-build, and authorized project test/build evidence is unavailable on the current machine.
 
 No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize implementation.
 
 ## 6. Completion rule
 
-The documentation audit is complete through Phase 3/M3 because all blocking contradictions were corrected, M3 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. The remaining P0 catalog and target-runtime/build gates remain future work and must not be reported as passed before actual execution.
+The documentation audit is complete through Phase 3/M4 because all blocking contradictions were corrected, M4 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. P1 execution and target-runtime/build gates remain future work and must not be reported as passed before actual execution.
