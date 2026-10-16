@@ -24,7 +24,6 @@ import re
 import shutil
 import stat
 import subprocess
-import sys
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path, PureWindowsPath
@@ -208,38 +207,6 @@ def _normalize_argv(command: Sequence[str]) -> tuple[str, ...]:
     return values
 
 
-def _canonicalize_current_python(command: Sequence[str]) -> tuple[str, ...]:
-    """Turn the current interpreter's absolute launcher into a safe basename.
-
-    The public safety rule rejects arbitrary absolute executable paths.  Test
-    callers commonly obtain the interpreter as ``sys.executable`` though, so
-    the one reviewed Python interpreter is canonicalized to its PATH basename
-    before the normal absolute-path validation runs.  Other absolute
-    launchers remain rejected.
-    """
-
-    if isinstance(command, (str, bytes, bytearray)) or not isinstance(command, Sequence):
-        raise ExecutionValidationError("command must be a non-empty sequence of strings")
-    values = tuple(command)
-    if not values or not isinstance(values[0], str):
-        return _normalize_argv(values)
-    first = values[0]
-    if _is_absolute_path(first):
-        try:
-            current = Path(sys.executable).resolve(strict=True)
-            supplied = Path(first).resolve(strict=True)
-        except (OSError, RuntimeError, ValueError):
-            supplied = None
-            current = None
-        if supplied is None or current is None or supplied != current:
-            raise ExecutionValidationError("absolute executable paths are not allowed")
-        basename = Path(first).name
-        if not basename:
-            raise ExecutionValidationError("absolute executable paths are not allowed")
-        values = (basename, *values[1:])
-    return _normalize_argv(values)
-
-
 def _executable_name(value: str) -> str:
     """Return a case-folded executable basename without accepting a path."""
 
@@ -280,16 +247,10 @@ def _validate_python_test_argv(argv: tuple[str, ...]) -> None:
         )
 
 
-def _validate_test_argv(
-    command: Sequence[str], *, allow_current_python: bool = False
-) -> tuple[str, ...]:
+def _validate_test_argv(command: Sequence[str]) -> tuple[str, ...]:
     """Normalize and validate a supported test command."""
 
-    argv = (
-        _canonicalize_current_python(command)
-        if allow_current_python
-        else _normalize_argv(command)
-    )
+    argv = _normalize_argv(command)
     _validate_python_test_argv(argv)
     return argv
 
@@ -892,7 +853,7 @@ def build_execution_plan(
             argv = _DEFAULT_TEST_ARGV
             candidate_source = "tests_directory_default"
         else:
-            argv = _validate_test_argv(command, allow_current_python=True)
+            argv = _validate_test_argv(command)
             candidate_source = "explicit_safe_test_command"
         side_effect_notice = (
             "An authorized test process may execute repository test code and may create or modify files; "
