@@ -166,7 +166,8 @@
   "verification": {
     "requested": [],
     "authorized": [],
-    "executions": []
+    "executions": [],
+    "status": "not_requested"
   },
   "redaction": {
     "mode": "default",

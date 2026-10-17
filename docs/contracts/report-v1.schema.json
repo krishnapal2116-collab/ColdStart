@@ -140,25 +140,280 @@
     },
     "verification": {
       "type": "object",
-      "required": ["requested", "authorized", "executions"],
+      "required": ["requested", "authorized", "executions", "status"],
       "properties": {
         "requested": { "type": "array", "items": { "type": "string" } },
         "authorized": { "type": "array", "items": { "type": "string" } },
-        "executions": { "type": "array", "items": { "$ref": "#/$defs/execution" } }
+        "executions": { "type": "array", "items": { "$ref": "#/$defs/execution" } },
+        "status": {
+          "enum": [
+            "not_requested",
+            "planned",
+            "denied",
+            "passed",
+            "failed",
+            "not_verified",
+            "unavailable",
+            "timeout",
+            "incomplete",
+            "error"
+          ]
+        },
+        "reason": { "type": ["string", "null"] },
+        "plan": { "$ref": "#/$defs/execution_plan" }
+      },
+      "additionalProperties": true
+    },
+    "safe_command": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "mount": {
+      "type": "object",
+      "required": ["source", "target", "read_only"],
+      "properties": {
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "read_only": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "resource_limits": {
+      "type": "object",
+      "properties": {
+        "cpus": { "type": "string" },
+        "memory": { "type": "string" },
+        "pids_limit": { "type": "string" },
+        "tmpfs": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "execution_plan": {
+      "type": "object",
+      "required": [
+        "kind",
+        "argv",
+        "command",
+        "working_directory",
+        "working_directory_label",
+        "network_mode",
+        "offline",
+        "runner",
+        "isolation",
+        "sandbox",
+        "no_host_fallback",
+        "host_fallback",
+        "fallback_policy",
+        "timeout_seconds",
+        "output_limit_bytes"
+      ],
+      "properties": {
+        "kind": { "enum": ["tests", "docker_build"] },
+        "normalized_kind": { "enum": ["tests", "docker_build"] },
+        "argv": { "$ref": "#/$defs/safe_command" },
+        "command": { "$ref": "#/$defs/safe_command" },
+        "display_argv": { "$ref": "#/$defs/safe_command" },
+        "working_directory": { "type": "string" },
+        "working_directory_label": { "type": "string" },
+        "network_mode": { "enum": ["default", "none"] },
+        "offline": { "type": "boolean" },
+        "runner": { "enum": ["host", "docker"] },
+        "runner_kind": { "enum": ["host", "docker"] },
+        "isolation": { "enum": ["host", "docker"] },
+        "isolation_mode": { "enum": ["host", "docker"] },
+        "sandbox": { "enum": ["host", "docker"] },
+        "image": { "type": ["string", "null"] },
+        "repository_mount": { "$ref": "#/$defs/mount" },
+        "resource_limits": { "$ref": "#/$defs/resource_limits" },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "timeout_seconds": { "type": "integer", "minimum": 1 },
+            "output_limit_bytes": { "type": "integer", "minimum": 1 },
+            "cpus": { "type": "string" },
+            "memory": { "type": "string" },
+            "pids_limit": { "type": "string" },
+            "tmpfs": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
+        "no_host_fallback": { "type": "boolean" },
+        "host_fallback": { "type": "boolean" },
+        "host_fallback_allowed": { "type": "boolean" },
+        "fallback_policy": { "enum": ["none", "selected_runner_only"] },
+        "fallback": { "enum": ["none", "selected_runner_only"] },
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "output_limit_bytes": { "type": "integer", "minimum": 1 },
+        "side_effect_notice": { "type": "string" },
+        "candidate_source": { "type": "string" },
+        "authorization_required": { "type": "boolean" },
+        "requires_authorization": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "output_stream": {
+      "type": "object",
+      "required": ["digest", "bytes", "truncated", "detail"],
+      "properties": {
+        "digest": { "type": ["string", "null"] },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "detail": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "execution_output": {
+      "type": "object",
+      "required": ["limit_bytes", "bytes", "stdout", "stderr"],
+      "properties": {
+        "limit_bytes": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "stdout": { "$ref": "#/$defs/output_stream" },
+        "stderr": { "$ref": "#/$defs/output_stream" }
+      },
+      "additionalProperties": true
+    },
+    "source_manifest": {
+      "type": "object",
+      "required": [
+        "before",
+        "after",
+        "before_digest",
+        "after_digest",
+        "unchanged",
+        "changed",
+        "comparison"
+      ],
+      "properties": {
+        "before": { "type": ["string", "null"] },
+        "after": { "type": ["string", "null"] },
+        "before_digest": { "type": ["string", "null"] },
+        "after_digest": { "type": ["string", "null"] },
+        "unchanged": { "type": ["boolean", "null"] },
+        "changed": { "type": ["boolean", "null"] },
+        "comparison": { "enum": ["not_checked", "unchanged", "changed", "error"] }
       },
       "additionalProperties": true
     },
     "execution": {
       "type": "object",
-      "required": ["execution_id", "kind", "status", "authorization", "cleanup"],
+      "required": ["execution_id", "kind", "status", "authorization", "cleanup_status"],
       "properties": {
-        "execution_id": { "type": "string" },
+        "execution_id": { "type": "string", "minLength": 1 },
         "kind": { "enum": ["tests", "docker_build"] },
-        "status": { "type": "string" },
-        "authorization": { "type": "string" },
-        "cleanup": { "type": "string" },
+        "normalized_kind": { "enum": ["tests", "docker_build"] },
+        "authorization": { "enum": ["authorized", "denied"] },
+        "authorization_state": { "enum": ["authorized", "denied"] },
+        "authorized": { "type": "boolean" },
+        "executed": { "type": "boolean" },
+        "status": {
+          "enum": [
+            "not_requested",
+            "planned",
+            "denied",
+            "passed",
+            "failed",
+            "not_verified",
+            "unavailable",
+            "timeout",
+            "incomplete",
+            "error"
+          ]
+        },
+        "result": {
+          "enum": [
+            "not_requested",
+            "planned",
+            "denied",
+            "passed",
+            "failed",
+            "not_verified",
+            "unavailable",
+            "timeout",
+            "incomplete",
+            "error"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "not_requested",
+            "planned",
+            "denied",
+            "passed",
+            "failed",
+            "not_verified",
+            "unavailable",
+            "timeout",
+            "incomplete",
+            "error"
+          ]
+        },
+        "candidate_source": { "type": "string" },
+        "argv": { "$ref": "#/$defs/safe_command" },
+        "command": { "$ref": "#/$defs/safe_command" },
+        "working_directory": { "type": "string" },
+        "working_directory_label": { "type": "string" },
+        "network_mode": { "enum": ["default", "none"] },
+        "runner": { "enum": ["host", "docker"] },
+        "runner_kind": { "enum": ["host", "docker"] },
+        "isolation": { "enum": ["host", "docker"] },
+        "isolation_mode": { "enum": ["host", "docker"] },
+        "sandbox": { "enum": ["host", "docker"] },
+        "image": { "type": ["string", "null"] },
+        "offline": { "type": "boolean" },
+        "repository_mount": { "$ref": "#/$defs/mount" },
+        "resource_limits": { "$ref": "#/$defs/resource_limits" },
+        "no_host_fallback": { "type": "boolean" },
+        "host_fallback": { "type": "boolean" },
+        "host_fallback_allowed": { "type": "boolean" },
+        "fallback_policy": { "enum": ["none", "selected_runner_only"] },
+        "fallback": { "enum": ["none", "selected_runner_only"] },
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "output_limit_bytes": { "type": "integer", "minimum": 1 },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "timeout_seconds": { "type": "integer", "minimum": 1 },
+            "output_limit_bytes": { "type": "integer", "minimum": 1 },
+            "cpus": { "type": "string" },
+            "memory": { "type": "string" },
+            "pids_limit": { "type": "string" },
+            "tmpfs": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
         "exit_code": { "type": ["integer", "null"] },
-        "network_mode": { "type": "string" }
+        "observed_exit_code": { "type": ["integer", "null"] },
+        "returncode": { "type": ["integer", "null"] },
+        "termination_reason": { "type": ["string", "null"] },
+        "termination": { "type": ["string", "null"] },
+        "cleanup": { "enum": ["not_started", "completed", "failed"] },
+        "cleanup_status": { "enum": ["not_started", "completed", "failed"] },
+        "source_manifest": { "$ref": "#/$defs/source_manifest" },
+        "source_manifest_before": { "type": ["string", "null"] },
+        "source_manifest_after": { "type": ["string", "null"] },
+        "source_manifest_unchanged": { "type": ["boolean", "null"] },
+        "source_manifest_comparison": { "type": ["string", "null"] },
+        "manifest_unchanged": { "type": ["boolean", "null"] },
+        "source_unchanged": { "type": ["boolean", "null"] },
+        "manifest_comparison": { "enum": ["not_checked", "unchanged", "changed", "error"] },
+        "output": { "$ref": "#/$defs/execution_output" },
+        "output_metadata": { "$ref": "#/$defs/execution_output" },
+        "output_limits": { "$ref": "#/$defs/execution_output" },
+        "stdout_digest": { "type": ["string", "null"] },
+        "stderr_digest": { "type": ["string", "null"] },
+        "stdout_bytes": { "type": "integer", "minimum": 0 },
+        "stderr_bytes": { "type": "integer", "minimum": 0 },
+        "output_bytes": { "type": "integer", "minimum": 0 },
+        "captured_output_bytes": { "type": "integer", "minimum": 0 },
+        "total_output_bytes": { "type": "integer", "minimum": 0 },
+        "stdout_truncated": { "type": "boolean" },
+        "stderr_truncated": { "type": "boolean" },
+        "stdout_detail": { "type": "string" },
+        "stderr_detail": { "type": "string" },
+        "reason": { "type": "string" },
+        "limitation": { "type": "string" }
       },
       "additionalProperties": true
     },

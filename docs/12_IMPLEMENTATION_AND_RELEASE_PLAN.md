@@ -137,7 +137,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** Authorization denial, plan-only no-child, Docker plan safety, sandbox validation, read-only mount metadata, no-host-fallback, authorized pass path, timeout, Docker unavailable, cleanup, source unchanged, and CLI report integration.
 - **Acceptance:** No execution occurs without explicit authorization; offline attempts use Docker isolation or return `not_verified`; actual attempts record bounded receipts; host fallback is prohibited.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
-- **Verification:** 13 M6.1 execution tests and 5 M6.1 CLI tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 121 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and actual Docker image execution remain blocked or unavailable in the environment.
+- **Verification:** 13 M6.1 execution tests, 5 M6.1 CLI tests, and 3 explicit report-contract tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 124 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and actual Docker image execution remain blocked or unavailable in the environment.
 - **Git checkpoints:** `b54c468 feat: add authorized verification flow`; `adc98db fix: keep offline tests fail-closed`.
 - **Relative effort:** Very large; omit if it threatens P0.
 
