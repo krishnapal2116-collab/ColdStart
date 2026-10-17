@@ -65,7 +65,7 @@
 | FR-015 | P0 | Keep static audits staging-free; any P1 temporary material must be cleaned up on success, failure, and cancellation. | P0 filesystem observers show no staging workspace; P1 cleanup tests verify no owned temporary directory remains or failure is reported. |
 | FR-016 | P0 | Provide a complete Python repository adapter for the defined P0 checks. | Python fixtures cover applicable runtime, dependency, docs, configuration, path, and container checks. |
 | FR-017 | P0 | Document ColdStart setup, test, and clean-checkout reproduction requirements. | Documentation review finds exact future commands and no undocumented required global dependency. |
-| FR-018 | P1 | Propose and run an explicitly authorized offline test verification. | The implemented runner emits a plan, requires explicit authorization, and records a bounded receipt for a safe direct Python test; unsupported host network isolation remains `not_verified`, never a pass. |
+| FR-018 | P1 | Propose and run an explicitly authorized offline test verification. | The implemented runner emits a Docker-isolated plan, requires explicit authorization, and records a bounded receipt for a safe direct Python test; missing Docker or image capability remains `not_verified`, never a pass. |
 | FR-019 | P1 | Propose and attempt an explicitly authorized clean Docker build. | The implemented runner uses fixed structured Docker argv and records actual exit status or a truthful unavailable receipt; Docker-enabled build evidence remains pending. |
 | FR-020 | P1 | Export SARIF when it can be done without contract or safety compromise. | A valid SARIF fixture is produced or the feature remains clearly unavailable. |
 | FR-021 | P1 | Compare a new audit with a user-supplied baseline. | Added, removed, and changed findings are deterministic in a dedicated test. |
@@ -99,7 +99,7 @@
 | NFR-010 | P0 | Maintainability: audit rules are isolated from CLI rendering and execution. | Module dependency tests and code review confirm the stated dependency direction. |
 | NFR-011 | P0 | ColdStart itself is reproducible from a clean Linux checkout. | Pinned runtime, lockfile, Dockerfile, and exact README commands are exercised before release. |
 | NFR-012 | P0 | Auditability: results record tool/schema versions, options, applicability, and execution authorization state. | Report contract tests require provenance and limitation fields. |
-| NFR-013 | P1 | Authorized execution is constrained by working directory, argv, timeout, output, process, and network policy. | M6 covers structured argv, timeout termination, bounded output, source-manifest comparison, and denial; direct host test network isolation is explicitly reported unavailable until a sandbox is added. |
+| NFR-013 | P1 | Authorized execution is constrained by working directory, argv, timeout, output, process, and network policy. | M6.1 covers Docker structured argv, read-only mount, `network=none`, fixed resource limits, timeout termination, bounded output, source-manifest comparison, no host fallback, and denial; Docker availability remains target-environment evidence. |
 | NFR-014 | P1 | Docker verification is optional and never a hidden prerequisite for static usefulness. | M6 returns a Docker-unavailable receipt while the static report remains complete; Docker-enabled integration remains pending. |
 | NFR-015 | P0 | Evidence-strength wording is deterministic and does not imply unsupported confidence. | Snapshot tests verify the same evidence class and phrasing for equivalent findings. |
 

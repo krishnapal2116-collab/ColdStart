@@ -103,6 +103,23 @@ class Phase6M6CliTests(unittest.TestCase):
         assert isinstance(verification, dict)
         self.assertEqual(verification["status"], "planned")
         self.assertEqual(verification["executions"], [])
+        self.assertEqual(verification["authorized"], [])
+        plan = verification["plan"]
+        self.assertIsInstance(plan, dict)
+        assert isinstance(plan, dict)
+        self.assertEqual(plan["runner"], "docker")
+        self.assertEqual(plan["isolation"], "docker")
+        self.assertEqual(plan["sandbox"], "docker")
+        self.assertTrue(plan["no_host_fallback"])
+        self.assertFalse(plan["host_fallback"])
+        self.assertEqual(plan["fallback_policy"], "none")
+        plan_argv = plan["argv"]
+        self.assertIsInstance(plan_argv, list)
+        assert isinstance(plan_argv, list)
+        self.assertEqual(plan_argv[:2], ["docker", "run"])
+        self.assertIn("--network=none", plan_argv)
+        self.assertIn("--pull=never", plan_argv)
+        self.assertIn("--read-only", plan_argv)
         self.assertFalse(marker.exists())
 
     def test_missing_authorization_is_denied_without_running_project_tests(self) -> None:

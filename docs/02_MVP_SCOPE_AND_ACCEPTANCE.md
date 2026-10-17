@@ -88,7 +88,7 @@ coldstart verify ./project --kind docker-build
 coldstart verify ./project --kind tests --authorize
 ```
 
-These commands first print a plan. `--plan` previews without a child process, and `--authorize` is required before a supported test or Docker process starts. The current direct host test runner cannot enforce network isolation, so an authorized `--offline` test attempt is `not_verified`; if Docker is unavailable, the static audit remains useful and the Docker verification status is `not_verified`.
+These commands first print a plan. `--plan` previews without a child process, and `--authorize` is required before a supported test or Docker process starts. An authorized `--offline` test uses Docker network isolation, a read-only repository mount, fixed resource limits, and no host fallback; if Docker is unavailable, the static audit remains useful and the verification status is `not_verified`.
 
 ## 3. Required command set
 

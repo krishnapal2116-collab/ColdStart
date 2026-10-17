@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import io
 import os
 import sys
 import tempfile
@@ -10,6 +11,7 @@ import time
 import unittest
 from collections.abc import Mapping
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,7 @@ if str(SRC) not in sys.path:
 from coldstart.execution import (  # noqa: E402
     ExecutionPlan,
     ExecutionReceipt,
+    ExecutionValidationError,
     build_execution_plan,
     execute_execution_plan,
 )
@@ -152,6 +155,185 @@ def _process_is_running(pid: int) -> bool:
 
 
 class Phase6M6ExecutionTests(unittest.TestCase):
+    def test_offline_tests_plan_uses_path_safe_bounded_docker_runner(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-offline-plan-") as temporary:
+            repository = Path(temporary) / "fixture"
+            (repository / "tests").mkdir(parents=True)
+            command = _python_unittest_command()
+
+            plan = build_execution_plan(
+                repository,
+                "tests",
+                offline=True,
+                command=command,
+            )
+
+        argv = _field(plan, "argv", "command")
+        self.assertIsInstance(argv, (tuple, list))
+        assert isinstance(argv, (tuple, list))
+        argv = tuple(argv)
+        self.assertEqual(argv[:2], ("docker", "run"))
+        self.assertIn("--network=none", argv)
+        self.assertIn("--pull=never", argv)
+        self.assertIn("--read-only", argv)
+
+        tmpfs_index = argv.index("--tmpfs")
+        self.assertEqual(argv[tmpfs_index + 1], "/tmp:rw,nosuid,nodev,noexec,size=64m")
+        cpus_index = argv.index("--cpus")
+        self.assertEqual(argv[cpus_index + 1], "1")
+        memory_index = argv.index("--memory")
+        self.assertEqual(argv[memory_index + 1], "512m")
+        pids_index = argv.index("--pids-limit")
+        self.assertEqual(argv[pids_index + 1], "256")
+
+        volume_index = argv.index("--volume")
+        self.assertEqual(argv[volume_index + 1], "<repository>:/workspace:ro")
+        workdir_index = argv.index("--workdir")
+        self.assertEqual(argv[workdir_index + 1], "/workspace")
+        image_index = workdir_index + 2
+        self.assertEqual(argv[image_index], "python:3.12.8-slim-bookworm")
+        self.assertEqual(argv[image_index + 1 :], command)
+
+        self.assertEqual(_field(plan, "runner", "runner_kind"), "docker")
+        self.assertEqual(_field(plan, "isolation", "isolation_mode"), "docker")
+        self.assertEqual(_field(plan, "sandbox"), "docker")
+        self.assertTrue(_field(plan, "no_host_fallback"))
+        self.assertFalse(_field(plan, "host_fallback"))
+        self.assertEqual(_field(plan, "fallback_policy"), "none")
+        serialized_plan = _json(plan)
+        for spelling in _temporary_path_spellings(repository):
+            self.assertNotIn(spelling, serialized_plan)
+
+    def test_offline_plan_and_receipt_serialization_redact_temporary_repository_path(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-path-redaction-") as temporary:
+            repository = Path(temporary) / "fixture"
+            repository.mkdir()
+            _write_unittest_fixture(
+                repository,
+                marker=Path(temporary) / "serialization-marker.txt",
+            )
+            plan = build_execution_plan(
+                repository,
+                "tests",
+                offline=True,
+                command=_python_unittest_command(),
+            )
+
+            empty_path = repository / "empty-bin"
+            empty_path.mkdir()
+            original_path = os.environ.get("PATH")
+            os.environ["PATH"] = str(empty_path)
+            try:
+                receipt = execute_execution_plan(plan, authorize=True)
+            finally:
+                if original_path is None:
+                    os.environ.pop("PATH", None)
+                else:
+                    os.environ["PATH"] = original_path
+
+            serialized_plan = _json(plan)
+            serialized_receipt = _json(receipt)
+
+            self.assertEqual(receipt.status, "not_verified")
+            for serialized in (serialized_plan, serialized_receipt):
+                for spelling in _temporary_path_spellings(repository):
+                    self.assertNotIn(spelling, serialized)
+                self.assertNotIn(str(repository.parent), serialized)
+
+    def test_sandbox_cannot_override_offline_or_online_test_runner(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-sandbox-") as temporary:
+            repository = Path(temporary) / "fixture"
+            (repository / "tests").mkdir(parents=True)
+            command = _python_unittest_command()
+
+            with self.assertRaises(ExecutionValidationError):
+                build_execution_plan(
+                    repository,
+                    "tests",
+                    offline=True,
+                    sandbox="host",
+                    command=command,
+                )
+            with self.assertRaises(ExecutionValidationError):
+                build_execution_plan(
+                    repository,
+                    "tests",
+                    offline=False,
+                    sandbox="docker",
+                    command=command,
+                )
+
+    def test_authorized_offline_tests_without_docker_are_not_verified_and_never_fallback(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-offline-no-docker-") as temporary:
+            repository = Path(temporary) / "fixture"
+            repository.mkdir()
+            marker = Path(temporary) / "host-fallback-marker.txt"
+            _write_unittest_fixture(repository, marker=marker)
+            plan = build_execution_plan(
+                repository,
+                "tests",
+                offline=True,
+                command=_python_unittest_command(),
+            )
+
+            empty_path = repository / "empty-bin"
+            empty_path.mkdir()
+            original_path = os.environ.get("PATH")
+            os.environ["PATH"] = str(empty_path)
+            try:
+                receipt = execute_execution_plan(plan, authorize=True)
+            finally:
+                if original_path is None:
+                    os.environ.pop("PATH", None)
+                else:
+                    os.environ["PATH"] = original_path
+
+            self.assertEqual(receipt.status, "not_verified")
+            self.assertFalse(receipt.executed)
+            self.assertEqual(receipt.runner, "docker")
+            self.assertEqual(receipt.isolation, "docker")
+            self.assertTrue(receipt.no_host_fallback)
+            self.assertIn("no host fallback", receipt.reason)
+            self.assertFalse(marker.exists())
+
+    def test_docker_runner_start_failure_is_not_verified_without_host_fallback(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-docker-start-") as temporary:
+            repository = Path(temporary) / "fixture"
+            repository.mkdir()
+            plan = build_execution_plan(
+                repository,
+                "tests",
+                offline=True,
+                command=_python_unittest_command(),
+            )
+
+            class FakeDockerProcess:
+                stdout = io.BytesIO(b"")
+                stderr = io.BytesIO(b"Unable to find image locally")
+
+                def wait(self, timeout: float | None = None) -> int:
+                    return 125
+
+                def poll(self) -> int:
+                    return 125
+
+                def terminate(self) -> None:
+                    return None
+
+                def kill(self) -> None:
+                    return None
+
+            with patch("coldstart.execution.shutil.which", return_value="docker"):
+                with patch(
+                    "coldstart.execution.subprocess.Popen",
+                    return_value=FakeDockerProcess(),
+                ):
+                    receipt = execute_execution_plan(plan, authorize=True)
+
+        self.assertEqual(receipt.status, "not_verified")
+        self.assertIn("no host fallback", receipt.reason)
+        self.assertEqual(receipt.exit_code, 125)
+
     def test_plan_uses_structured_argv_safe_display_and_normalized_docker_build(self) -> None:
         with tempfile.TemporaryDirectory(prefix="coldstart-m6-plan-") as temporary:
             repository = Path(temporary) / "fixture"

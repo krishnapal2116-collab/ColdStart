@@ -1,7 +1,7 @@
 # ColdStart Test Strategy
 
-**Status:** M1/M2/M3/M4/M5/M6 tests implemented and passing in the available environment; target-runtime execution tests remain open
-**Version:** 0.7
+**Status:** M1/M2/M3/M4/M5/M6/M6.1 tests implemented and passing in the available environment; target-runtime execution tests remain open
+**Version:** 0.8
 **Canonical command after implementation:** `make test`
 
 ## 1. Purpose and principles
@@ -171,6 +171,6 @@ The current offline application suite is implemented and runs with the standard 
 PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-It ran 119 tests under Python 3.14.7: 116 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. The M4-specific modules ran 38 tests with 37 passes and one symlink skip. The M5 hardening module ran 7 tests with 7 passes. The M6 execution module ran 8 tests with 8 passes, the M6 CLI module ran 5 tests with 5 passes, and the committed example-fixture module ran 2 tests with 2 passes. Compile checks also passed with `python -m compileall -q src build_backend tests`.
+It ran 124 tests under Python 3.14.7: 121 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. The M4-specific modules ran 38 tests with 37 passes and one symlink skip. The M5 hardening module ran 7 tests with 7 passes. The M6 execution module ran 16 tests with 16 passes, the M6 CLI module ran 6 tests with 6 passes, and the committed example-fixture module ran 2 tests with 2 passes. Compile checks also passed with `python -m compileall -q src build_backend tests examples`.
 
-The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and network-isolated P1 project test/build execution remain unverified or planned. The M6 tests deliberately verify that direct host `--offline` test execution returns `not_verified` rather than claiming network isolation. These checks must not be inferred from the available Python 3.14.7 run.
+The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and actual Docker image execution remain unverified or planned. The M6.1 tests verify the Docker isolation plan, read-only mount, fixed resource limits, no-host-fallback rule, and missing-Docker `not_verified` behavior. These checks must not be inferred from the available Python 3.14.7 run.

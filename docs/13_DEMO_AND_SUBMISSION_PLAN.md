@@ -52,7 +52,7 @@ coldstart verify examples/clean-python --kind tests --offline --plan
 coldstart verify examples/clean-python --kind tests --offline --authorize
 ```
 
-Show the proposed plan and explicit approval. The current host runner reports an authorized offline test as `not_verified` until network isolation is available. If Docker is unavailable or execution is not included in the release, state that honestly instead of simulating a pass.
+Show the proposed Docker-isolated plan and explicit approval. The current runner reports an authorized offline test as `not_verified` if Docker or the pinned image is unavailable, without falling back to host execution. If Docker is unavailable or execution is not included in the release, state that honestly instead of simulating a pass.
 
 ## 5. Correction story
 

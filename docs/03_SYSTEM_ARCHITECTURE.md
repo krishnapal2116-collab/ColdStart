@@ -1,7 +1,7 @@
 # ColdStart System Architecture
 
-**Status:** P0 approved; M6 execution boundary implemented in a bounded first slice
-**Version:** 0.3
+**Status:** P0 approved; M6.1 Docker-backed offline execution boundary implemented in a bounded slice
+**Version:** 0.4
 **Architectural target:** P0 deterministic static auditor with a P1 execution extension
 
 ## 1. System overview
@@ -22,7 +22,7 @@ static report → proposed execution plan → explicit approval
 → constrained runner → execution receipt → merged report
 ```
 
-The repository under audit is untrusted input. No P0 component may execute a project-derived command. The P1 runner is the only component permitted to launch a project process, and it is not available implicitly. The current runner accepts only direct Python `unittest`/`pytest` argv or a fixed Docker build argv; shell recipes and arbitrary scripts are rejected.
+The repository under audit is untrusted input. No P0 component may execute a project-derived command. The P1 runner is the only component permitted to launch a project process, and it is not available implicitly. The current runner accepts only direct Python `unittest`/`pytest` argv for the host path, a fixed Docker-isolated test wrapper for offline mode, or a fixed Docker build argv; shell recipes and arbitrary scripts are rejected.
 
 ## 2. Component diagram
 
@@ -213,7 +213,7 @@ The static CLI targets pinned Python 3.12.8 on Linux, Windows, and macOS. The cl
 
 - Discovery and rules accept fixture data instead of global process state.
 - Report serialization is contract-tested independently of rendering.
-- The execution broker has bounded fixture tests for denial, plan-only behavior, authorization, timeout, output, source-manifest comparison, and Docker unavailability. Docker-enabled integration and a network-isolated test runner remain target-environment work.
+- The execution broker has bounded fixture tests for denial, plan-only behavior, authorization, Docker-backed offline plan safety, timeout, output, source-manifest comparison, sandbox validation, and Docker unavailability. Actual Docker image execution remains target-environment work.
 - Security tests can substitute process and filesystem observers.
 - Fixtures are deliberately clean, defective, malformed, large, symlinked, and secret-bearing.
 

@@ -1,7 +1,7 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 6 first P1 verification slice implemented; target verification pending
-**Version:** 0.7
+**Status:** Phase 6.1 Docker-backed offline verification implemented; target verification pending
+**Version:** 0.8
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
 ## 1. Phase 0 closeout
@@ -127,17 +127,17 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M6 — Optional P1 verification layer
 
-**Current state:** First bounded verification slice implemented and tested under Python 3.14.7. Plan-only preview, explicit authorization, safe direct Python test execution, bounded receipts, timeout/cleanup, source-manifest comparison, fixed Docker planning, and Docker-unavailable semantics are present. Network-isolated host tests, Python 3.12.8, Docker-enabled builds, and clean Linux remain pending.
+**Current state:** M6.1 Docker-backed offline test isolation is implemented and tested under Python 3.14.7. Plan-only preview, explicit authorization, read-only repository mount, `network=none`, fixed resource limits, bounded receipts, timeout/cleanup, source-manifest comparison, fixed Docker planning, no host fallback, and Docker-unavailable semantics are present. Python 3.12.8, Docker image execution, Docker-enabled builds, and clean Linux remain pending.
 
 - **Goal:** Add explicit offline test and clean Docker build verification without changing P0 safety.
 - **Requirements:** FR-018, FR-019, NFR-013, NFR-014.
 - **Expected files/modules:** `src/coldstart/execution.py`, CLI verification flow, report receipt rendering, staging, Docker runner, receipts, P1 fixtures.
 - **Dependencies:** M5; Docker-enabled environment; threat-model review.
-- **Tasks:** Implemented plan-only preview, structured argv, explicit `--authorize`, resource/output limits, timeout/cleanup, manifest comparison, fixed Docker build planning, and unavailable receipts. Next add a genuinely network-isolated test runner and execute the Docker-enabled path in the target environment.
-- **Tests:** Authorization denial, plan-only no-child, authorized pass, timeout, host-network isolation refusal, Docker unavailable, cleanup, source unchanged, and CLI report integration.
-- **Acceptance:** No execution occurs without explicit authorization; actual attempts record bounded receipts; unsupported network isolation is `not_verified`, never a pass.
+- **Tasks:** Implemented plan-only preview, structured argv, explicit `--authorize`, Docker `network=none`, read-only mount, fixed CPU/memory/process/tmpfs limits, timeout/cleanup, manifest comparison, fixed Docker build planning, no-host-fallback policy, and unavailable receipts. Next execute the Docker-backed path in the target environment.
+- **Tests:** Authorization denial, plan-only no-child, Docker plan safety, sandbox validation, read-only mount metadata, no-host-fallback, authorized pass path, timeout, Docker unavailable, cleanup, source unchanged, and CLI report integration.
+- **Acceptance:** No execution occurs without explicit authorization; offline attempts use Docker isolation or return `not_verified`; actual attempts record bounded receipts; host fallback is prohibited.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
-- **Verification:** 8 M6 execution tests and 5 M6 CLI tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 116 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and network-isolated test execution remain blocked or unavailable in the environment.
+- **Verification:** 16 M6.1 execution tests and 6 M6.1 CLI tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 121 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and actual Docker image execution remain blocked or unavailable in the environment.
 - **Git checkpoints:** `b54c468 feat: add authorized verification flow`; `adc98db fix: keep offline tests fail-closed`.
 - **Relative effort:** Very large; omit if it threatens P0.
 

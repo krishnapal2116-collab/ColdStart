@@ -7,9 +7,10 @@ does not inspect project commands or start a child process.  A child process
 is started only by :func:`execute_execution_plan` after the caller supplies
 ``authorize=True``.
 
-The runner keeps the repository as its working directory, passes an argv list
-to :class:`subprocess.Popen`, never invokes a shell, bounds captured output,
-and compares a regular-file source manifest before and after execution.  The
+The host runner keeps the repository as its working directory; the offline
+Docker runner binds it read-only at ``/workspace``.  Both pass an argv list to
+:class:`subprocess.Popen`, never invoke a shell, bound captured output, and
+compare a regular-file source manifest before and after execution.  The
 receipt is intentionally a safe summary: it contains no repository path,
 environment values, or unbounded process output.
 """
@@ -43,6 +44,47 @@ _DOCKER_OFFLINE_ARGV = (
     "--tag",
     "coldstart-verification:local",
     ".",
+)
+_DOCKER_TEST_IMAGE = "python:3.12.8-slim-bookworm"
+_DOCKER_TEST_TMPFS = "/tmp:rw,nosuid,nodev,noexec,size=64m"
+_DOCKER_TEST_CPUS = "1"
+_DOCKER_TEST_MEMORY = "512m"
+_DOCKER_TEST_PIDS_LIMIT = "256"
+_DOCKER_TEST_DISPLAY_MOUNT = "<repository>:/workspace:ro"
+_DOCKER_TEST_DISPLAY_PREFIX = (
+    "docker",
+    "run",
+    "--rm",
+    "--network=none",
+    "--pull=never",
+    "--read-only",
+    "--tmpfs",
+    _DOCKER_TEST_TMPFS,
+    "--cpus",
+    _DOCKER_TEST_CPUS,
+    "--memory",
+    _DOCKER_TEST_MEMORY,
+    "--pids-limit",
+    _DOCKER_TEST_PIDS_LIMIT,
+    "--volume",
+    _DOCKER_TEST_DISPLAY_MOUNT,
+    "--workdir",
+    "/workspace",
+    _DOCKER_TEST_IMAGE,
+)
+_DOCKER_TEST_RESOURCE_LIMITS = {
+    "cpus": _DOCKER_TEST_CPUS,
+    "memory": _DOCKER_TEST_MEMORY,
+    "pids_limit": _DOCKER_TEST_PIDS_LIMIT,
+    "tmpfs": _DOCKER_TEST_TMPFS,
+}
+_SAFE_CONTAINER_PATH_TOKENS = frozenset(
+    {
+        "/workspace",
+        "--workdir=/workspace",
+        _DOCKER_TEST_TMPFS,
+        _DOCKER_TEST_DISPLAY_MOUNT,
+    }
 )
 _DEFAULT_TEST_ARGV = (
     "python",
@@ -136,6 +178,31 @@ def _normalize_kind(kind: str) -> str:
     return normalized
 
 
+def _normalize_sandbox(value: object, *, field_name: str = "sandbox") -> str | None:
+    """Normalize one of the two supported execution sandboxes."""
+
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ExecutionValidationError(
+            f"{field_name} must be either 'host' or 'docker'"
+        )
+    normalized = value.strip().lower()
+    if normalized not in {"host", "docker"}:
+        raise ExecutionValidationError(
+            f"{field_name} must be either 'host' or 'docker'"
+        )
+    return normalized
+
+
+def _expected_sandbox(kind: str, offline: bool) -> str:
+    """Return the only safe sandbox for a normalized plan."""
+
+    if kind == "docker_build":
+        return "docker"
+    return "docker" if offline else "host"
+
+
 def _validate_limit(name: str, value: int, maximum: int) -> int:
     """Validate one positive integer resource limit."""
 
@@ -184,7 +251,12 @@ def _has_parent_escape(value: str) -> bool:
     return any(part == ".." for part in normalized.split("/"))
 
 
-def _validate_token(value: object, *, position: int | None = None) -> str:
+def _validate_token(
+    value: object,
+    *,
+    position: int | None = None,
+    allow_fixed_container_path: bool = False,
+) -> str:
     """Validate one argv element before it can reach a child process."""
 
     if not isinstance(value, str):
@@ -193,22 +265,37 @@ def _validate_token(value: object, *, position: int | None = None) -> str:
     if not value or not value.strip():
         location = f" at position {position}" if position is not None else ""
         raise ExecutionValidationError(f"command argument{location} must not be empty")
-    if _SHELL_OPERATOR.search(value):
+    fixed_container_path = (
+        allow_fixed_container_path and value in _SAFE_CONTAINER_PATH_TOKENS
+    )
+    fixed_container_mount = (
+        allow_fixed_container_path and value == _DOCKER_TEST_DISPLAY_MOUNT
+    )
+    if _SHELL_OPERATOR.search(value) and not (fixed_container_path or fixed_container_mount):
         raise ExecutionValidationError("command contains a shell operator or control character")
-    if _has_parent_escape(value):
+    if _has_parent_escape(value) and not fixed_container_mount:
         raise ExecutionValidationError("command arguments must not escape the repository")
-    if _is_absolute_path(value) or _EMBEDDED_ABSOLUTE.search(value):
+    if not fixed_container_path and (_is_absolute_path(value) or _EMBEDDED_ABSOLUTE.search(value)):
         raise ExecutionValidationError("absolute paths are not allowed in execution arguments")
     return value
 
 
-def _normalize_argv(command: Sequence[str]) -> tuple[str, ...]:
+def _normalize_argv(
+    command: Sequence[str],
+    *,
+    allow_fixed_container_paths: bool = False,
+) -> tuple[str, ...]:
     """Copy and validate a structured argv sequence."""
 
     if isinstance(command, (str, bytes, bytearray)) or not isinstance(command, Sequence):
         raise ExecutionValidationError("command must be a non-empty sequence of strings")
     values = tuple(
-        _validate_token(value, position=index) for index, value in enumerate(command)
+        _validate_token(
+            value,
+            position=index,
+            allow_fixed_container_path=allow_fixed_container_paths,
+        )
+        for index, value in enumerate(command)
     )
     if not values:
         raise ExecutionValidationError("command must not be empty")
@@ -263,13 +350,47 @@ def _validate_test_argv(command: Sequence[str]) -> tuple[str, ...]:
     return argv
 
 
+def _docker_test_display_argv(test_argv: Sequence[str]) -> tuple[str, ...]:
+    """Wrap a validated test argv in the path-free Docker display command."""
+
+    return _DOCKER_TEST_DISPLAY_PREFIX + tuple(test_argv)
+
+
+def _validate_docker_test_display_argv(argv: tuple[str, ...]) -> None:
+    """Reject direct Docker-test plans whose fixed safety flags were changed."""
+
+    prefix_length = len(_DOCKER_TEST_DISPLAY_PREFIX)
+    if len(argv) <= prefix_length or argv[:prefix_length] != _DOCKER_TEST_DISPLAY_PREFIX:
+        raise ExecutionValidationError(
+            "Docker test plan argv must use the fixed network-isolated runner"
+        )
+    _validate_test_argv(argv[prefix_length:])
+
+
+def _docker_test_execution_argv(plan: "ExecutionPlan") -> tuple[str, ...]:
+    """Build the private Docker argv with the real repository mount path."""
+
+    mount = f"{os.fspath(plan.repository)}:/workspace:ro"
+    return tuple(
+        mount if token == _DOCKER_TEST_DISPLAY_MOUNT else token
+        for token in plan.argv
+    )
+
+
 def _safe_plan_argv(argv: Sequence[str]) -> list[str]:
     """Return argv suitable for a report, redacting credential-shaped values."""
 
     result: list[str] = []
     redact_next = False
     for token in argv:
-        value = _sanitize_text(token, redact_paths=True)
+        # These are fixed container paths, not host paths.  Keep them visible
+        # so a reviewer can verify the Docker workdir and temporary filesystem
+        # without weakening the general receipt path-redaction rule.
+        value = (
+            token
+            if token in _SAFE_CONTAINER_PATH_TOKENS
+            else _sanitize_text(token, redact_paths=True)
+        )
         if redact_next:
             result.append("<redacted>")
             redact_next = False
@@ -328,8 +449,10 @@ class ExecutionPlan:
 
     ``repository`` is retained for the runner but is deliberately omitted
     from :meth:`to_dict`; reports expose only the safe ``working_directory``
-    label.  ``argv`` is a tuple so callers cannot mutate a plan after it has
-    been reviewed.
+    label.  For an offline test plan, ``argv`` contains a path-free Docker
+    display command; the real repository mount is assembled only in private
+    execution data.  ``argv`` is a tuple so callers cannot mutate a plan after
+    it has been reviewed.
     """
 
     repository: Path = field(repr=False, compare=False)
@@ -343,6 +466,9 @@ class ExecutionPlan:
     candidate_source: str
     authorization_required: bool = True
     offline: bool = False
+    runner: str | None = None
+    isolation: str | None = None
+    sandbox: str | None = None
 
     def __post_init__(self) -> None:
         """Normalize immutable values and reject malformed direct instances."""
@@ -350,7 +476,10 @@ class ExecutionPlan:
         object.__setattr__(self, "repository", _canonical_repository(self.repository))
         normalized_kind = _normalize_kind(self.kind)
         object.__setattr__(self, "kind", normalized_kind)
-        normalized_argv = _normalize_argv(self.argv)
+        normalized_argv = _normalize_argv(
+            self.argv,
+            allow_fixed_container_paths=(normalized_kind == "tests" and self.offline),
+        )
         object.__setattr__(self, "argv", normalized_argv)
         _validate_limit("timeout_seconds", self.timeout_seconds, MAX_TIMEOUT_SECONDS)
         _validate_limit(
@@ -365,9 +494,37 @@ class ExecutionPlan:
             raise ExecutionValidationError(
                 f"network_mode must be {expected_network!r} for this plan"
             )
+        expected_sandbox = _expected_sandbox(normalized_kind, self.offline)
+        requested_runner = _normalize_sandbox(self.runner, field_name="runner")
+        requested_isolation = _normalize_sandbox(
+            self.isolation,
+            field_name="isolation",
+        )
+        requested_sandbox = _normalize_sandbox(self.sandbox)
+        for name, requested in (
+            ("runner", requested_runner),
+            ("isolation", requested_isolation),
+            ("sandbox", requested_sandbox),
+        ):
+            if requested is not None and requested != expected_sandbox:
+                raise ExecutionValidationError(
+                    f"{name}={requested!r} is unsafe for this {normalized_kind} plan; "
+                    f"expected {expected_sandbox!r}"
+                )
+        object.__setattr__(self, "runner", expected_sandbox)
+        object.__setattr__(self, "isolation", expected_sandbox)
+        object.__setattr__(self, "sandbox", expected_sandbox)
         object.__setattr__(self, "working_directory_label", _safe_label())
         object.__setattr__(self, "side_effect_notice", _sanitize_text(self.side_effect_notice))
         object.__setattr__(self, "candidate_source", _sanitize_text(self.candidate_source))
+        if normalized_kind == "tests" and expected_sandbox == "docker":
+            _validate_docker_test_display_argv(normalized_argv)
+        elif normalized_kind == "tests":
+            _validate_test_argv(normalized_argv)
+        elif normalized_argv != (
+            _DOCKER_OFFLINE_ARGV if self.offline else _DOCKER_ARGV
+        ):
+            raise ExecutionValidationError("docker build plan argv is fixed")
 
     @property
     def command(self) -> tuple[str, ...]:
@@ -393,10 +550,46 @@ class ExecutionPlan:
 
         return self.argv
 
+    @property
+    def isolation_mode(self) -> str:
+        """Compatibility alias for callers that use an isolation-mode name."""
+
+        return str(self.isolation)
+
+    @property
+    def runner_kind(self) -> str:
+        """Compatibility alias for callers that use a runner-kind name."""
+
+        return str(self.runner)
+
+    @property
+    def image(self) -> str | None:
+        """Return the fixed image used by the Docker-isolated test runner."""
+
+        if self.kind == "tests" and self.runner == "docker":
+            return _DOCKER_TEST_IMAGE
+        return None
+
+    @property
+    def resource_limits(self) -> dict[str, str]:
+        """Return fixed Docker resource limits without host-specific data."""
+
+        if self.kind == "tests" and self.runner == "docker":
+            return dict(_DOCKER_TEST_RESOURCE_LIMITS)
+        return {}
+
+    @property
+    def no_host_fallback(self) -> bool:
+        """Whether this plan must never retry through the host runner."""
+
+        return self.kind == "tests" and self.offline and self.runner == "docker"
+
     def to_dict(self) -> dict[str, object]:
         """Return a JSON-safe plan without absolute paths or secrets."""
 
         safe_argv = _safe_plan_argv(self.argv)
+        no_host_fallback = self.no_host_fallback
+        resource_limits = self.resource_limits
         return {
             "kind": _KindDisplay(self.kind),
             "normalized_kind": self.kind,
@@ -407,12 +600,30 @@ class ExecutionPlan:
             "working_directory_label": self.working_directory_label,
             "network_mode": self.network_mode,
             "offline": self.offline,
-            "timeout_seconds": self.timeout_seconds,
-            "output_limit_bytes": self.output_limit_bytes,
+            "runner": self.runner,
+            "runner_kind": self.runner,
+            "isolation": self.isolation,
+            "isolation_mode": self.isolation,
+            "sandbox": self.sandbox,
+            "image": self.image,
+            "repository_mount": {
+                "source": "<repository>",
+                "target": "/workspace",
+                "read_only": self.runner == "docker" and self.kind == "tests",
+            },
+            "resource_limits": resource_limits,
             "limits": {
                 "timeout_seconds": self.timeout_seconds,
                 "output_limit_bytes": self.output_limit_bytes,
+                **resource_limits,
             },
+            "no_host_fallback": no_host_fallback,
+            "host_fallback": False if no_host_fallback else self.runner == "host",
+            "host_fallback_allowed": False if no_host_fallback else self.runner == "host",
+            "fallback_policy": "none" if no_host_fallback else "selected_runner_only",
+            "fallback": "none" if no_host_fallback else "selected_runner_only",
+            "timeout_seconds": self.timeout_seconds,
+            "output_limit_bytes": self.output_limit_bytes,
             "side_effect_notice": _sanitize_text(self.side_effect_notice),
             "candidate_source": _sanitize_text(self.candidate_source),
             "authorization_required": self.authorization_required,
@@ -453,6 +664,11 @@ class ExecutionReceipt:
     stderr_detail: str = ""
     reason: str = ""
     limitation: str = ""
+    runner: str = "host"
+    isolation: str = "host"
+    sandbox: str = "host"
+    image: str | None = None
+    no_host_fallback: bool = False
 
     def __post_init__(self) -> None:
         """Normalize sequence data so a receipt cannot be mutated in place."""
@@ -465,6 +681,18 @@ class ExecutionReceipt:
         object.__setattr__(self, "stderr_detail", _sanitize_text(self.stderr_detail))
         object.__setattr__(self, "reason", _sanitize_text(self.reason))
         object.__setattr__(self, "limitation", _sanitize_text(self.limitation))
+        normalized_runner = _normalize_sandbox(self.runner, field_name="runner")
+        normalized_isolation = _normalize_sandbox(
+            self.isolation,
+            field_name="isolation",
+        )
+        normalized_sandbox = _normalize_sandbox(self.sandbox)
+        object.__setattr__(self, "runner", normalized_runner or "host")
+        object.__setattr__(self, "isolation", normalized_isolation or "host")
+        object.__setattr__(self, "sandbox", normalized_sandbox or "host")
+        object.__setattr__(self, "image", _sanitize_text(self.image) if self.image else None)
+        if not isinstance(self.no_host_fallback, bool):
+            raise ExecutionValidationError("no_host_fallback must be a boolean")
 
     @property
     def authorization_state(self) -> str:
@@ -539,6 +767,11 @@ class ExecutionReceipt:
             ),
             "comparison": self.manifest_comparison,
         }
+        resource_limits = (
+            dict(_DOCKER_TEST_RESOURCE_LIMITS)
+            if self.kind == "tests" and self.runner == "docker"
+            else {}
+        )
         return {
             "execution_id": self.execution_id,
             "kind": _KindDisplay(self.kind),
@@ -556,11 +789,29 @@ class ExecutionReceipt:
             "working_directory": ".",
             "working_directory_label": self.working_directory_label,
             "network_mode": self.network_mode,
+            "runner": self.runner,
+            "runner_kind": self.runner,
+            "isolation": self.isolation,
+            "isolation_mode": self.isolation,
+            "sandbox": self.sandbox,
+            "image": self.image,
+            "offline": self.network_mode == "none",
+            "repository_mount": {
+                "source": "<repository>",
+                "target": "/workspace",
+                "read_only": self.kind == "tests" and self.runner == "docker",
+            },
+            "resource_limits": resource_limits,
+            "no_host_fallback": self.no_host_fallback,
+            "host_fallback": False if self.no_host_fallback else self.runner == "host",
+            "fallback_policy": "none" if self.no_host_fallback else "selected_runner_only",
+            "fallback": "none" if self.no_host_fallback else "selected_runner_only",
             "timeout_seconds": self.timeout_seconds,
             "output_limit_bytes": self.output_limit_bytes,
             "limits": {
                 "timeout_seconds": self.timeout_seconds,
                 "output_limit_bytes": self.output_limit_bytes,
+                **resource_limits,
             },
             "exit_code": self.exit_code,
             "observed_exit_code": self.exit_code,
@@ -753,6 +1004,10 @@ def _plan_digest(plan: ExecutionPlan, manifest: str | None = None) -> str:
         "kind": plan.kind,
         "argv": list(plan.argv),
         "network_mode": plan.network_mode,
+        "runner": plan.runner,
+        "isolation": plan.isolation,
+        "sandbox": plan.sandbox,
+        "image": plan.image,
         "timeout_seconds": plan.timeout_seconds,
         "output_limit_bytes": plan.output_limit_bytes,
         "manifest": manifest,
@@ -791,6 +1046,11 @@ def _empty_receipt(
         network_mode=plan.network_mode,
         timeout_seconds=plan.timeout_seconds,
         output_limit_bytes=plan.output_limit_bytes,
+        runner=plan.runner or "host",
+        isolation=plan.isolation or "host",
+        sandbox=plan.sandbox or "host",
+        image=plan.image,
+        no_host_fallback=plan.no_host_fallback,
         exit_code=None,
         termination_reason=termination_reason,
         cleanup_status=cleanup_status,
@@ -812,6 +1072,7 @@ def build_execution_plan(
     kind: str,
     *,
     offline: bool = False,
+    sandbox: str | None = None,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     output_limit_bytes: int = DEFAULT_OUTPUT_LIMIT_BYTES,
     command: Sequence[str] | None = None,
@@ -823,8 +1084,12 @@ def build_execution_plan(
     ``python -m unittest discover`` default when ``repository/tests`` is a
     real directory; callers may instead provide a direct ``python -m
     unittest``, ``python -m pytest``, or ``pytest`` argv.  Make recipes,
-    shell strings, wrappers, and arbitrary scripts are rejected.  Docker's
-    argv is fixed by the plan and cannot be replaced by ``command``.
+    shell strings, wrappers, and arbitrary scripts are rejected.  Offline
+    tests use a fixed Docker ``run`` argv with a path-free display mount;
+    Docker's build argv is fixed by the plan and cannot be replaced by
+    ``command``.  ``sandbox`` is optional compatibility input and accepts only
+    the selected safe value (``host`` for online tests, ``docker`` for offline
+    tests and Docker builds).
 
     This function is plan-only: it never calls :mod:`subprocess`, imports the
     repository, or writes a file.
@@ -834,6 +1099,13 @@ def build_execution_plan(
     resolved_repository = _canonical_repository(repository)
     if not isinstance(offline, bool):
         raise ExecutionValidationError("offline must be a boolean")
+    requested_sandbox = _normalize_sandbox(sandbox)
+    selected_sandbox = _expected_sandbox(normalized_kind, offline)
+    if requested_sandbox is not None and requested_sandbox != selected_sandbox:
+        raise ExecutionValidationError(
+            f"sandbox={requested_sandbox!r} is unsafe for this plan; "
+            f"expected {selected_sandbox!r}"
+        )
     selected_timeout = _validate_limit(
         "timeout_seconds", timeout_seconds, MAX_TIMEOUT_SECONDS
     )
@@ -872,10 +1144,17 @@ def build_execution_plan(
         else:
             argv = _validate_test_argv(command)
             candidate_source = "explicit_safe_test_command"
+        if offline:
+            argv = _docker_test_display_argv(argv)
         side_effect_notice = (
             "An authorized test process may execute repository test code and may create or modify files; "
             "ColdStart detects source changes and does not revert them."
         )
+        if offline:
+            side_effect_notice = (
+                "An authorized Docker test process runs with network=none, a read-only repository "
+                "mount, fixed resource limits, and no host-runner fallback."
+            )
 
     return ExecutionPlan(
         repository=resolved_repository,
@@ -889,6 +1168,9 @@ def build_execution_plan(
         candidate_source=candidate_source,
         authorization_required=True,
         offline=offline,
+        runner=selected_sandbox,
+        isolation=selected_sandbox,
+        sandbox=selected_sandbox,
     )
 
 
@@ -901,8 +1183,19 @@ def _validate_plan_for_execution(plan: ExecutionPlan) -> None:
         expected_argv = _DOCKER_OFFLINE_ARGV if plan.offline else _DOCKER_ARGV
         if plan.argv != expected_argv:
             raise ExecutionValidationError("docker build plan argv is fixed")
+        if plan.runner != "docker" or plan.isolation != "docker" or plan.sandbox != "docker":
+            raise ExecutionValidationError("docker build plan must use the Docker runner")
     elif plan.kind == "tests":
-        _validate_test_argv(plan.argv)
+        if plan.offline:
+            if plan.runner != "docker" or plan.isolation != "docker" or plan.sandbox != "docker":
+                raise ExecutionValidationError(
+                    "offline tests must use Docker isolation without a host fallback"
+                )
+            _validate_docker_test_display_argv(plan.argv)
+        else:
+            if plan.runner != "host" or plan.isolation != "host" or plan.sandbox != "host":
+                raise ExecutionValidationError("online tests must use the host runner")
+            _validate_test_argv(plan.argv)
     else:  # Defensive because frozen instances can still be constructed manually.
         raise ExecutionValidationError("unsupported execution kind")
     _canonical_repository(plan.repository)
@@ -986,11 +1279,16 @@ def _run_authorized_process(plan: ExecutionPlan, execution_id: str) -> Execution
     exit_code: int | None = None
     cleanup_status = "not_started"
     launch_reason = ""
+    execution_argv = (
+        _docker_test_execution_argv(plan)
+        if plan.kind == "tests" and plan.runner == "docker"
+        else plan.argv
+    )
 
     try:
         # ``shell=False`` is explicit even though it is the subprocess default.
         process = subprocess.Popen(
-            list(plan.argv),
+            list(execution_argv),
             shell=False,
             cwd=plan.repository,
             stdin=subprocess.DEVNULL,
@@ -1023,18 +1321,29 @@ def _run_authorized_process(plan: ExecutionPlan, execution_id: str) -> Execution
                 exit_code = None
     except FileNotFoundError:
         launch_reason = (
-            "Docker is unavailable because it is not installed or is not on PATH."
+            "Docker is unavailable for network isolation because it is not installed "
+            "or is not on PATH; no host fallback was attempted."
+            if plan.runner == "docker" and plan.kind == "tests"
+            else "Docker is unavailable because it is not installed or is not on PATH."
             if plan.kind == "docker_build"
             else "The requested executable is not installed or is not on PATH."
         )
         cleanup_status = "not_started"
     except PermissionError:
-        launch_reason = "The requested executable could not be started due to permissions."
+        launch_reason = (
+            "Docker could not be started due to permissions; no host fallback was attempted."
+            if plan.runner == "docker" and plan.kind == "tests"
+            else "The requested executable could not be started due to permissions."
+        )
         cleanup_status = "not_started"
     except (OSError, ValueError) as error:
         # Keep the public reason generic; an OS error can contain an absolute
         # host path or an environment value.
-        launch_reason = "The requested process could not be started."
+        launch_reason = (
+            "Docker execution could not be started; no host fallback was attempted."
+            if plan.runner == "docker" and plan.kind == "tests"
+            else "The requested process could not be started."
+        )
         cleanup_status = "failed" if process is not None else "not_started"
     finally:
         if process is not None and not timed_out:
@@ -1096,6 +1405,12 @@ def _run_authorized_process(plan: ExecutionPlan, execution_id: str) -> Execution
     elif exit_code is None:
         status = "error"
         reason = "The process did not produce an observed exit code."
+    elif plan.runner == "docker" and exit_code == 125:
+        status = "not_verified"
+        reason = (
+            "Docker could not start the requested isolated operation (daemon or image unavailable); "
+            "no host fallback was attempted."
+        )
     elif exit_code != 0:
         status = "failed"
         reason = "The process exited with a nonzero status."
@@ -1124,6 +1439,11 @@ def _run_authorized_process(plan: ExecutionPlan, execution_id: str) -> Execution
         network_mode=plan.network_mode,
         timeout_seconds=plan.timeout_seconds,
         output_limit_bytes=plan.output_limit_bytes,
+        runner=plan.runner or "host",
+        isolation=plan.isolation or "host",
+        sandbox=plan.sandbox or "host",
+        image=plan.image,
+        no_host_fallback=plan.no_host_fallback,
         exit_code=exit_code,
         termination_reason=termination_reason,
         cleanup_status=cleanup_status,
@@ -1157,7 +1477,7 @@ def execute_execution_plan(
 
     Denial returns before executable discovery, manifest reads, or
     :class:`subprocess.Popen`.  Authorized Docker plans first check for a
-    ``docker`` executable and report ``unavailable`` when it is absent.
+    ``docker`` executable and report ``not_verified`` when it is absent.
     Authorized test plans and Docker builds use bounded pipe readers, a hard
     timeout with termination, and a regular-file source-manifest comparison.
     A receipt is never ``passed`` unless an observed exit code is zero and the
@@ -1176,27 +1496,27 @@ def execute_execution_plan(
             reason="Execution was not authorized; no child process was started.",
         )
 
-    if plan.kind == "docker_build" and shutil.which("docker") is None:
+    if plan.runner == "docker" and shutil.which("docker") is None:
+        if plan.kind == "tests" and plan.no_host_fallback:
+            reason = (
+                "Docker is unavailable for network isolation because it is not installed "
+                "or is not on PATH; no host fallback was attempted."
+            )
+        else:
+            reason = "Docker is unavailable because it is not installed or is not on PATH."
         return _empty_receipt(
             plan,
             status="not_verified",
             authorized=True,
             executed=False,
-            reason="Docker is unavailable because it is not installed or is not on PATH.",
+            reason=reason,
             cleanup_status="not_started",
         )
-    if plan.kind == "tests" and plan.offline:
-        return _empty_receipt(
-            plan,
-            status="not_verified",
-            authorized=True,
-            executed=False,
-            reason=(
-                "Offline test execution is unavailable because the host runner "
-                "cannot enforce network isolation for a direct test process."
-            ),
-            cleanup_status="not_started",
-        )
+    if plan.kind == "tests" and plan.runner == "docker":
+        # The Docker executable check above is intentionally separate from the
+        # host executable check below.  An offline request can never fall back
+        # to a direct host test command.
+        return _run_authorized_process(plan, _plan_digest(plan))
     executable = _executable_name(plan.argv[0])
     if shutil.which(plan.argv[0]) is None and executable not in {"python", "python3", "py"}:
         return _empty_receipt(

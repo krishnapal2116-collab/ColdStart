@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1/M2/M3/M4/M5 contract implemented; M6 verification/receipt slice implemented with target gates open
-**Version:** 0.6
+**Status:** M1/M2/M3/M4/M5/M6.1 contract implemented; Docker execution gates remain open
+**Version:** 0.7
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation
@@ -221,7 +221,7 @@ The M6 runner implements the first bounded form of this contract. Every P1 attem
 
 No receipt with no observed execution may claim `passed`.
 
-The current runner accepts only direct Python `unittest`/`pytest` commands or a fixed Docker build command; shell operators, arbitrary scripts, Make recipes, and absolute command paths are rejected. Docker `--offline` plans use Docker's `--network=none`. Direct host test execution cannot enforce network isolation yet, so an authorized `tests --offline` attempt returns `not_verified` without starting the test process.
+The current runner accepts only direct Python `unittest`/`pytest` commands or a fixed Docker build command; shell operators, arbitrary scripts, Make recipes, and absolute command paths are rejected. Offline test plans use Docker's `--network=none`, `--pull=never`, a read-only `/workspace` bind mount, fixed `tmpfs`/CPU/memory/process limits, and no host fallback. If Docker is missing or cannot start, the attempt returns `not_verified` without executing the test command on the host.
 
 ## 14. Advanced P1 command contracts
 

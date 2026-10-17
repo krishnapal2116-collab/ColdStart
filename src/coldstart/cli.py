@@ -166,7 +166,10 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser.add_argument(
         "--offline",
         action="store_true",
-        help="request a no-network execution mode where the runner supports it",
+        help=(
+            "run tests through Docker network isolation with no host-runner fallback "
+            "(or use the existing offline Docker-build mode)"
+        ),
     )
     verify_parser.add_argument(
         "--timeout",
