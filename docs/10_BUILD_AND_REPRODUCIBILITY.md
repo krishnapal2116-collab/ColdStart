@@ -161,7 +161,7 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M4 integration — 94 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase5_m5_hardening -v` — 7 M5 hardening/self-audit tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M5 hardening — 101 tests passed with 3 platform-expected skips under Python 3.14.7.
-- `PYTHONPATH=src python -m unittest tests.test_phase6_m6_execution tests.test_phase6_m6_cli -v` — 22 M6/M6.1 tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase6_m6_execution tests.test_phase6_m6_cli -v` — 18 M6/M6.1 tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase6_m6_examples -v` — 2 committed clean/defective fixture acceptance tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M6.1/fixtures — 121 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m coldstart audit examples/clean-python --format json` — exited `0` with no failed/error findings.
