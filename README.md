@@ -67,7 +67,7 @@ PYTHONPATH=src python -m coldstart version
 PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`make test` is the canonical Linux command. The direct source-tree 150-test suite currently passes with 147 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
+`make test` is the canonical Linux command. The direct source-tree 151-test suite currently passes with 148 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
 
 ## P1 verification preview
 
@@ -123,4 +123,4 @@ Static inspection is read-only and non-executing by default. Every finding must 
 
 ## Phase 0, M1, M2, M3, M4, M5, M6, M6.1, M7, and M8 checks
 
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 150-test offline integration/unit suite: 147 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so Docker-backed verification remains unverified. ColdStart itself cannot be declared reproducible until the target commands run successfully.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 151-test offline integration/unit suite: 148 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so Docker-backed verification remains unverified. ColdStart itself cannot be declared reproducible until the target commands run successfully.

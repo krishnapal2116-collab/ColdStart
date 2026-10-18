@@ -22,6 +22,7 @@ from .version import CHECK_CATALOG_VERSION, COMPARISON_SCHEMA_VERSION, __version
 
 
 MAX_COMPARISON_BYTES = 10_000_000
+MAX_CHECK_ID_LENGTH = 240
 _FINGERPRINT_RE = re.compile(r"^[a-f0-9]{64}$")
 _FINDING_FIELDS = (
     "check_id",
@@ -151,6 +152,8 @@ def _validate_finding(item: object, label: str) -> dict[str, object]:
             f"{label} finding is missing {', '.join(missing)}"
         )
     check_id = _string(finding["check_id"], f"{label} check_id")
+    if len(check_id) > MAX_CHECK_ID_LENGTH:
+        raise ComparisonValidationError(f"{label} check_id exceeds the safe length")
     severity = _string(finding["severity"], f"{label} severity")
     status = _string(finding["status"], f"{label} status")
     category = _string(finding["category"], f"{label} category")
@@ -294,14 +297,18 @@ def _safe_finding_summary(finding: Mapping[str, object]) -> dict[str, object]:
     """Expose only bounded, non-evidence metadata from an input finding."""
 
     return {
-        "check_id": str(finding["check_id"]),
+        "check_id": safe_text(finding["check_id"], limit=MAX_CHECK_ID_LENGTH),
         "severity": str(finding["severity"]),
         "status": str(finding["status"]),
         "title": safe_text(finding["title"], limit=240),
         "category": str(finding["category"]),
-        "affected_path": finding["affected_path"],
+        "affected_path": (
+            None
+            if finding["affected_path"] is None
+            else safe_text(finding["affected_path"], limit=240)
+        ),
         "evidence_strength": str(finding["evidence_strength"]),
-        "rule_version": str(finding["rule_version"]),
+        "rule_version": safe_text(finding["rule_version"], limit=240),
     }
 
 
@@ -395,19 +402,25 @@ def compare_reports(
         if baseline is None:
             assert current is not None
             added.append(
-                {"check_id": check_id, "finding": _safe_finding_summary(current)}
+                {
+                    "check_id": safe_text(check_id, limit=MAX_CHECK_ID_LENGTH),
+                    "finding": _safe_finding_summary(current),
+                }
             )
             continue
         if current is None:
             resolved.append(
-                {"check_id": check_id, "finding": _safe_finding_summary(baseline)}
+                {
+                    "check_id": safe_text(check_id, limit=MAX_CHECK_ID_LENGTH),
+                    "finding": _safe_finding_summary(baseline),
+                }
             )
             continue
         fields = _changed_fields(baseline, current)
         if not fields:
             unchanged.append(
                 {
-                    "check_id": check_id,
+                    "check_id": safe_text(check_id, limit=MAX_CHECK_ID_LENGTH),
                     "severity": current["severity"],
                     "status": current["status"],
                 }
@@ -415,7 +428,7 @@ def compare_reports(
             continue
         changed.append(
             {
-                "check_id": check_id,
+                "check_id": safe_text(check_id, limit=MAX_CHECK_ID_LENGTH),
                 "direction": _direction(baseline, current),
                 "changed_fields": fields,
                 "baseline": _safe_finding_summary(baseline),
@@ -436,5 +449,6 @@ __all__ = [
     "ComparisonResult",
     "ComparisonValidationError",
     "MAX_COMPARISON_BYTES",
+    "MAX_CHECK_ID_LENGTH",
     "compare_reports",
 ]

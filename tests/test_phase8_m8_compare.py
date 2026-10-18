@@ -164,6 +164,7 @@ class Phase8M8CompareTests(unittest.TestCase):
         current = report(
             [finding("CS-ADDED-001", message=sensitive_message)],
         )
+        current["findings"][0]["affected_path"] = "path-" + ("y" * 5000)
         baseline = report([])
         temporary_directory, current_path, baseline_path = self.write_pair(current, baseline)
         self.addCleanup(temporary_directory.cleanup)
@@ -254,6 +255,16 @@ class Phase8M8CompareTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertIn("duplicate check ID", result.stderr)
+
+    def test_oversized_check_id_is_rejected(self) -> None:
+        value = report([finding("C" * 241)])
+        temporary_directory, current_path, baseline_path = self.write_pair(value, value)
+        self.addCleanup(temporary_directory.cleanup)
+
+        result = run_cli("compare", str(current_path), str(baseline_path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("check_id exceeds the safe length", result.stderr)
 
     def test_malformed_report_does_not_leak_the_input_path(self) -> None:
         temporary_directory = tempfile.TemporaryDirectory(prefix="coldstart-m8-malformed-")

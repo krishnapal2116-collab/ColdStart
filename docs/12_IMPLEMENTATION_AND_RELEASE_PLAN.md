@@ -1,6 +1,6 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** Phase 6.1 Docker-backed verification, M7 explanations, and M8 baseline comparison implemented; target verification pending
+**Status:** M6.1 Docker-backed verification, M7 explanations, and M8 baseline comparison implemented; target verification pending
 **Version:** 1.0
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
@@ -166,7 +166,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** `tests/test_phase8_m8_compare.py` covers all categories, worsened/improved direction, fingerprint-only change, order determinism, terminal/JSON output, output files, invalid input, duplicate IDs, bounded finding output, contract artifacts, help, and audit-pipeline isolation.
 - **Acceptance:** Current-first/baseline-second comparison is deterministic; no report paths or raw input documents are emitted; compatible comparisons return `0`; invalid inputs return `2`; P0 semantics remain unchanged.
 - **Failure conditions:** Guessing across schema/catalog versions, duplicate-ID last-write-wins behavior, unsafe diagnostics, or routing comparison through the audit pipeline.
-- **Verification:** The focused M8 module passes 14 tests; the integrated suite has 147 passing tests with 3 platform-expected skips under Python 3.14.7. Target-runtime and Docker execution gates remain open.
+- **Verification:** The focused M8 module passes 15 tests; the integrated suite has 148 passing tests with 3 platform-expected skips under Python 3.14.7. Target-runtime and Docker execution gates remain open.
 - **Git checkpoint:** `feat: add deterministic baseline comparison`.
 - **Relative effort:** Medium.
 
