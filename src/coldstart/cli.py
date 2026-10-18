@@ -21,6 +21,7 @@ from .execution import (
     build_execution_plan,
     execute_execution_plan,
 )
+from .explanation import UnknownCheckError, explanation_for, render_explanation
 from .reporting import serialize_report, write_report
 from .version import (
     CHECK_CATALOG_VERSION,
@@ -79,6 +80,12 @@ def build_parser() -> argparse.ArgumentParser:
         "version", help="show the ColdStart version information"
     )
     version_parser.set_defaults(handler=_run_version)
+
+    explain_parser = subparsers.add_parser(
+        "explain", help="explain one registered P0 check without auditing a repository"
+    )
+    explain_parser.add_argument("check_id", metavar="CHECK_ID")
+    explain_parser.set_defaults(handler=_run_explain)
 
     audit_parser = subparsers.add_parser(
         "audit", help="run a safe, non-executing static audit"
@@ -205,6 +212,21 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _run_version(_args: argparse.Namespace) -> int:
     print(_version_text())
+    return 0
+
+
+def _run_explain(args: argparse.Namespace) -> int:
+    """Render one bundled check explanation without touching a repository."""
+
+    try:
+        explanation = explanation_for(args.check_id)
+    except UnknownCheckError:
+        print(
+            f"ColdStart: unknown check ID: {safe_text(args.check_id)}",
+            file=sys.stderr,
+        )
+        return 2
+    sys.stdout.write(render_explanation(explanation))
     return 0
 
 

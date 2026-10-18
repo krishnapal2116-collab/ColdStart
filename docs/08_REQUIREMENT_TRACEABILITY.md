@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2/M3/M4/M5/M6/M6.1 verification slices implemented and tested; target execution gates remain open
-**Version:** 0.8
+**Status:** M1/M2/M3/M4/M5/M6/M6.1 verification slices and M7 rule explanations implemented and tested; target execution gates remain open
+**Version:** 0.9
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. M6 implements the explicit plan/authorization/receipt slice for P1 verification. M6.1 adds Docker-backed offline test isolation; target-runtime and Docker image execution remain unverified.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. M6 implements the explicit plan/authorization/receipt slice for P1 verification. M6.1 adds Docker-backed offline test isolation. M7 adds repository-independent explanations for every registered P0 check; target-runtime and Docker image execution remain unverified.
 
 ## 1. Functional requirements
 
@@ -40,7 +40,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | FR-029 | Audit fingerprint | P0 | `findings`, `reporting` | Report repository field | `test_fingerprint_stability` | Equivalent inputs yield same fingerprint | Determinism |
 | FR-030 | ColdStart self-audit | P0 | release process, `cli` | Release gate | `test_self_audit_fixture` | Release evidence contains actual self-audit | Release/integration |
 | FR-031 | Baseline comparison | P1 | `policy`, `reporting` | Compare command | `test_baseline_diff` | Added/resolved/changed findings are stable | Integration |
-| FR-032 | Rule explanation | P1 | `cli`, `checks` | Explain command | `test_explain_check` | Catalog explanation is complete and offline | CLI |
+| FR-032 | Rule explanation | P1 | `cli`, `explanation`, `catalog` | Explain command | `tests/test_phase7_m7_explain.py` | Catalog explanation is complete and offline | CLI |
 | FR-033 | Policy profiles | P1 | `config`, `policy` | Profile option | `test_policy_profiles` | Profiles preserve rule/status semantics | Contract/CLI |
 | FR-034 | Plan-only verification | P1 | `execution`, `cli` | Verify plan | `test_verify_plan_no_child` | Plan displays constraints without execution | Security/CLI |
 
@@ -151,4 +151,8 @@ M6 adds `src/coldstart/execution.py`, the distinct `verify` CLI command, receipt
 
 The committed `examples/clean-python` and `examples/defective-python` fixtures complete the P0 demo-input requirement. `tests/test_phase6_m6_examples.py` verifies their expected CLI statuses and read-only behavior.
 
-Coverage is provided by `tests/test_phase6_m6_execution.py` (13 tests), `tests/test_phase6_m6_cli.py` (5 tests), `tests/test_phase6_m6_examples.py` (2 tests), and `tests/test_phase6_m6_contract.py` (3 tests). The latest integrated suite has 124 passing tests with 3 platform-expected skips under Python 3.14.7. This is not evidence for Python 3.12.8, Make, Docker image execution, or a clean Linux environment.
+Coverage is provided by `tests/test_phase6_m6_execution.py` (13 tests), `tests/test_phase6_m6_cli.py` (5 tests), `tests/test_phase6_m6_examples.py` (2 tests), and `tests/test_phase6_m6_contract.py` (3 tests). The M6 integrated suite had 124 passing tests with 3 platform-expected skips under Python 3.14.7 before the M7 slice; this is not evidence for Python 3.12.8, Make, Docker image execution, or a clean Linux environment.
+
+## 11. M7 rule-explanation slice
+
+FR-032 is implemented by `src/coldstart/explanation.py` and the `explain CHECK_ID` CLI handler. The command uses immutable bundled metadata for all 13 registered catalog checks, reports applicability, purpose, algorithm, evidence, limitations, remediation, and test references, and rejects unknown IDs without inspecting a repository or invoking the audit pipeline. `tests/test_phase7_m7_explain.py` covers metadata completeness, CLI availability, required sections, determinism, no-repository operation, unknown-ID handling, help output, and audit-pipeline isolation; all 9 focused tests and the 136-test integrated suite passed with 3 platform-expected skips under Python 3.14.7. The M7 feature does not change report schema `1.0`, catalog IDs, finding statuses, or P0 audit semantics.

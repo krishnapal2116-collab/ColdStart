@@ -144,15 +144,17 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 ### M7 — Optional advanced improvements
 
 - **Goal:** Add one evidence-preserving P1 enhancement without destabilizing P0.
-- **Requirements:** FR-020, FR-021, FR-031, FR-032, FR-033, or FR-034 only if selected.
-- **Expected files/modules:** baseline comparison, `explain` command, policy profiles, SARIF, or an additional adapter; focused tests/docs.
+- **Selected feature:** FR-032, the offline `explain CHECK_ID` rule-explanation command.
+- **Requirements:** FR-032.
+- **Expected files/modules:** `src/coldstart/explanation.py`, CLI explain handler, focused tests/docs.
 - **Dependencies:** M5 and owner decision.
-- **Tasks:** Select exactly one feature after M5; update contract/traceability, implement, test, and demo it honestly. Prefer baseline/diff or `explain` before broader ecosystem support.
-- **Tests:** Feature-specific contract and regression tests.
-- **Acceptance:** P0 remains green, the feature is clearly versioned, and no new feature changes the meaning of P0 statuses.
+- **Tasks:** Add complete bundled metadata for every registered P0 check, expose it through an offline CLI command, reject unknown IDs, and document the feature without changing report semantics.
+- **Tests:** `tests/test_phase7_m7_explain.py` covers completeness, all 13 IDs, required output sections, deterministic output, unknown-ID failure, no-repository operation, help, and audit-pipeline isolation.
+- **Acceptance:** P0 remains green, every registered check has purpose/applicability/algorithm/evidence/limitations/remediation/test references, and no new feature changes the meaning of P0 statuses.
 - **Failure conditions:** Scope expansion or contract regression.
-- **Git checkpoint:** `feat: add approved P1 enhancement`.
-- **Relative effort:** Small to large depending on choice; may be skipped.
+- **Verification:** The focused M7 module passes 9 tests; the integrated suite has 133 passing tests with 3 platform-expected skips under Python 3.14.7. Target-runtime and Docker execution gates remain open.
+- **Git checkpoint:** `feat: add offline rule explanations`.
+- **Relative effort:** Small.
 
 ## 4. Release gates
 

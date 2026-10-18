@@ -1,7 +1,7 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Phase 6.1 Docker-isolation slice tested under the available interpreter; target-runtime/build verification pending
-**Version:** 0.8
+**Status:** Phase 6.1 Docker-isolation and M7 explanation slices tested under the available interpreter; target-runtime/build verification pending
+**Version:** 0.9
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
 ## 1. Purpose
@@ -165,6 +165,9 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest tests.test_phase6_m6_contract -v` — 3 M6 report-contract tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest tests.test_phase6_m6_examples -v` — 2 committed clean/defective fixture acceptance tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M6.1/contract/fixtures — 124 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest tests.test_phase7_m7_explain -v` — 9 M7 rule-explanation tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M7 — 133 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart explain CS-DEPS-001` — printed the complete offline rule explanation with no repository path or audit execution.
 - `PYTHONPATH=src python -m coldstart audit examples/clean-python --format json` — exited `0` with no failed/error findings.
 - `PYTHONPATH=src python -m coldstart audit examples/defective-python --format json` — exited `1` with expected static findings and no fixture execution.
 - `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --plan --format json` — produced a Docker-isolated plan with `network_mode=none`, `--pull=never`, read-only `/workspace` mount, fixed resource limits, explicit authorization, and no execution receipt; the current repository static preflight returned its own findings exit code.

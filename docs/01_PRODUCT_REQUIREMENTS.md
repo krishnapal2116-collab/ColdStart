@@ -1,6 +1,6 @@
 # ColdStart Product Requirements
 
-**Status:** P0 approved; first M6 P1 verification slice implemented, target execution gates remain open
+**Status:** P0 approved; M6 verification and M7 offline rule-explanation slices implemented, target execution gates remain open
 **Version:** 0.3
 **Requirement language:** `MUST` is release-blocking; `SHOULD` is strongly preferred; `MAY` is optional. All requirements below have a priority and a testable completion definition.
 

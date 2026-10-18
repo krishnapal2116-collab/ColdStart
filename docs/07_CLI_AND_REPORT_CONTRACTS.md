@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1/M2/M3/M4/M5/M6.1 contract implemented; Docker execution gates remain open
-**Version:** 0.7
+**Status:** M1/M2/M3/M4/M5/M6.1 contract and M7 explain command implemented; Docker execution gates remain open
+**Version:** 0.8
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation
@@ -14,7 +14,7 @@ Primary invocation:
 coldstart audit REPOSITORY_PATH [OPTIONS]
 ```
 
-P1 verification invocations are reserved until the P0 audit is stable:
+P1 invocations are separate from the P0 audit:
 
 ```text
 coldstart verify REPOSITORY_PATH --kind tests --offline
@@ -227,7 +227,7 @@ The current runner accepts only direct Python `unittest`/`pytest` commands or a 
 
 ### `coldstart explain CHECK_ID`
 
-This command reads the reviewed check catalog and prints the check purpose, applicability, algorithm summary, evidence-strength semantics, limitations, test references, and remediation guidance. It does not inspect a repository, call an AI service, or execute code.
+Implemented. This command reads only bundled reviewed check metadata and prints the check purpose, applicability, algorithm summary, evidence-strength semantics, limitations, test references, and remediation guidance. It does not require a repository, inspect project files, call an AI service, or execute code. `CHECK_ID` must exactly match one of the 13 registered P0 catalog IDs; an unknown ID returns usage exit code `2` and writes no report to stdout.
 
 ### `coldstart compare CURRENT_REPORT BASELINE_REPORT`
 
