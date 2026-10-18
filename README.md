@@ -4,7 +4,7 @@ ColdStart is a local-first software-repository reproducibility auditor. It helps
 
 ## Current status
 
-**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, M5 offline hardening/self-audit coverage, the M6 verification slice, M6.1 Docker-backed offline test isolation, committed clean/defective demo fixtures, and the M7 offline rule-explanation slice are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, explicit verification plans, structured authorized test execution, bounded receipts, Docker-backed network isolation, Docker-unavailable handling, fixture acceptance tests, and repository-independent explanations for all 13 P0 checks are implemented. Target-runtime, Make, Docker image availability, and clean project test/build verification remain environment gaps in the current workspace.
+**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, M5 offline hardening/self-audit coverage, the M6 verification slice, M6.1 Docker-backed offline test isolation, committed clean/defective demo fixtures, M7 offline rule explanations, and M8 deterministic baseline comparison are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, explicit verification plans, structured authorized test execution, bounded receipts, Docker-backed network isolation, Docker-unavailable handling, fixture acceptance tests, repository-independent explanations for all 13 P0 checks, and comparison of compatible audit reports are implemented. Target-runtime, Make, Docker image availability, and clean project test/build verification remain environment gaps in the current workspace.
 
 ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. P1 verification is a separate command: it prints a plan, requires `--authorize` before starting a child process, and records a bounded receipt. Docker-based clean builds and network-isolated test execution remain optional capabilities and are not required for static audit usefulness.
 
@@ -34,8 +34,10 @@ The machine-readable report contract is documented in `docs/07_CLI_AND_REPORT_CO
 
 - [Report JSON Schema](docs/contracts/report-v1.schema.json)
 - [Sanitized example report](docs/contracts/report-v1.example.json)
+- [Comparison JSON Schema](docs/contracts/comparison-v1.schema.json)
+- [Sanitized example comparison](docs/contracts/comparison-v1.example.json)
 
-The advanced roadmap is intentionally layered: P0 adds evidence strength, deterministic audit fingerprints, self-audit, and no static staging workspace. M7 implements offline rule explanations; P1 baseline comparison, policy profiles, and Docker-backed verification remain separate and additive.
+The advanced roadmap is intentionally layered: P0 adds evidence strength, deterministic audit fingerprints, self-audit, and no static staging workspace. M7 implements offline rule explanations and M8 implements baseline comparison; policy profiles and Docker-backed verification remain separate and additive.
 
 ## Frozen P0 command for Phase 1
 
@@ -47,7 +49,7 @@ The M1 audit engine validates the selected readable repository boundary, emits a
 
 ## Phase 1 foundation
 
-Phase 1 provides the package/toolchain foundation, help/version commands, and an offline standard-library test suite. Phase 2/M1 adds the safe `audit` report core, boundary validation, evidence strength, deterministic fingerprints, and terminal/JSON output. Phase 3/M2 adds bounded deterministic discovery, project detection, fail-closed `.coldstart.toml` policy parsing, applicability planning, inventory limits, exclusions, and visible skipped-check evidence. M3 adds static dependency, lockfile, runtime, and setup-documentation findings. M4 completes static test-command, configuration, environment-variable, portability, security, build-configuration, and contained-path findings. M6 adds `verify --plan`, explicit authorization, safe direct Python test execution, bounded receipts, source-manifest comparison, and fixed Docker build planning. M7 adds `explain CHECK_ID`, which reads only bundled catalog metadata and never inspects a repository. A static pass never implies that verification ran.
+Phase 1 provides the package/toolchain foundation, help/version commands, and an offline standard-library test suite. Phase 2/M1 adds the safe `audit` report core, boundary validation, evidence strength, deterministic fingerprints, and terminal/JSON output. Phase 3/M2 adds bounded deterministic discovery, project detection, fail-closed `.coldstart.toml` policy parsing, applicability planning, inventory limits, exclusions, and visible skipped-check evidence. M3 adds static dependency, lockfile, runtime, and setup-documentation findings. M4 completes static test-command, configuration, environment-variable, portability, security, build-configuration, and contained-path findings. M6 adds `verify --plan`, explicit authorization, safe direct Python test execution, bounded receipts, source-manifest comparison, and fixed Docker build planning. M7 adds `explain CHECK_ID`, which reads only bundled catalog metadata and never inspects a repository. M8 adds `compare CURRENT_REPORT BASELINE_REPORT`, which reads two local reports, rejects incompatible inputs, and deterministically reports finding changes. A static pass never implies that verification ran.
 
 Target setup requires Python 3.12.8:
 
@@ -65,7 +67,7 @@ PYTHONPATH=src python -m coldstart version
 PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`make test` is the canonical Linux command. The direct source-tree 136-test suite currently passes with 133 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
+`make test` is the canonical Linux command. The direct source-tree 150-test suite currently passes with 147 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
 
 ## P1 verification preview
 
@@ -93,6 +95,17 @@ PYTHONPATH=src python -m coldstart explain CS-DEPS-001
 
 The command is offline and deterministic. It prints the check's applicability, purpose, bounded algorithm, evidence semantics, limitations, remediation, and test references. Unknown check IDs return usage exit code `2` without producing an audit report.
 
+## P1 baseline comparison
+
+Compare a current audit report with a previous baseline:
+
+```text
+PYTHONPATH=src python -m coldstart compare current.json baseline.json --format terminal
+PYTHONPATH=src python -m coldstart compare current.json baseline.json --format json
+```
+
+The comparison reports `added`, `resolved`, `unchanged`, and `changed` findings by stable check ID, plus whether the audit fingerprints changed. Compatible comparisons return exit code `0`; malformed or incompatible input reports return exit code `2`.
+
 ## Committed demo fixtures
 
 The repository includes two real audit targets:
@@ -108,6 +121,6 @@ The clean fixture provides complete dependency-free Python evidence. The defecti
 
 Static inspection is read-only and non-executing by default. Every finding must identify its rule, status, severity, evidence or limitation, and remediation where appropriate. `not_applicable`, `skipped`, and `not_verified` are not passes. ColdStart must never claim tests or builds passed unless an authorized execution actually produced that evidence.
 
-## Phase 0, M1, M2, M3, M4, M5, M6, M6.1, and M7 checks
+## Phase 0, M1, M2, M3, M4, M5, M6, M6.1, M7, and M8 checks
 
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7 have a passing 136-test offline integration/unit suite: 133 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so Docker-backed verification remains unverified. ColdStart itself cannot be declared reproducible until the target commands run successfully.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 150-test offline integration/unit suite: 147 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so Docker-backed verification remains unverified. ColdStart itself cannot be declared reproducible until the target commands run successfully.

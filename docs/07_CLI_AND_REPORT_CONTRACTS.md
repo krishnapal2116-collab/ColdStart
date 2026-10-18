@@ -1,7 +1,7 @@
 # ColdStart CLI and Report Contracts
 
-**Status:** M1/M2/M3/M4/M5/M6.1 contract and M7 explain command implemented; Docker execution gates remain open
-**Version:** 0.8
+**Status:** M1/M2/M3/M4/M5/M6.1 contract, M7 explain, and M8 compare commands implemented; Docker execution gates remain open
+**Version:** 0.9
 **Report schema:** `1.0`
 
 ## 1. Program identity and invocation
@@ -231,7 +231,9 @@ Implemented. This command reads only bundled reviewed check metadata and prints 
 
 ### `coldstart compare CURRENT_REPORT BASELINE_REPORT`
 
-This command compares compatible JSON reports by stable check ID and fingerprint. It reports `added`, `resolved`, `unchanged`, and `changed` findings, including severity/status changes. It must reject incompatible schema or catalog versions rather than guessing.
+Implemented. This command compares compatible local JSON reports by stable finding ID and audit fingerprint. The first argument is the current report and the second is the baseline. It reports `added`, `resolved`, `unchanged`, and `changed` findings, including changed fields and a conservative `worsened`, `improved`, or `changed` direction. Finding-array order does not affect the result. A changed audit fingerprint is reported separately and does not replace per-finding comparison. Compatible differences return exit code `0`; malformed, invalid, or incompatible reports return usage exit code `2` without comparison JSON on stdout.
+
+The dedicated comparison contract is documented in `docs/contracts/comparison-v1.schema.json` with a sanitized example in `docs/contracts/comparison-v1.example.json`. Comparison output is separate from the audit report schema and contains no input report paths or raw report documents.
 
 ### `--profile`
 

@@ -1,8 +1,8 @@
 # ColdStart Documentation Quality Audit
 
-**Status:** Completed through Phase 6.1 Docker-isolation closeout; target-runtime/build gates remain open
-**Version:** 0.8
-**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4/M5/M6/M6.1 implementation state
+**Status:** Completed through Phase 8 baseline-comparison closeout; target-runtime/build gates remain open
+**Version:** 1.0
+**Audit scope:** The 14 required documents, contract artifacts, and M1/M2/M3/M4/M5/M6/M6.1/M7/M8 implementation state
 
 ## 1. Audit objective
 
@@ -29,7 +29,7 @@ Review the specification as an independent engineering pass. The audit must find
 
 The following checks were run after the document pack was written:
 
-- Git status and file inventory: the required documents, contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, M4 complete catalog modules, M6 execution/CLI slice, and committed clean/defective demo fixtures are present; target-runtime and Docker-enabled execution remain separate.
+- Git status and file inventory: the required documents, audit/comparison contract artifacts, Phase 1 foundation, M1 audit/report core, M2 discovery/applicability source files, M3 static check modules, M4 complete catalog modules, M6 execution/CLI slice, M7 explanations, M8 comparison, and committed clean/defective demo fixtures are present; target-runtime and Docker-enabled execution remain separate.
 - `git diff --check` and `git log --check --oneline --all`: passed.
 - Unique requirement-ID validation: 49 unique IDs (34 functional and 15 non-functional) in the requirements document.
 - Requirement traceability: all 49 requirement IDs are present in the traceability matrix; all 33 P0 requirements have planned acceptance tests.
@@ -46,6 +46,7 @@ The following checks were run after the document pack was written:
 - Phase 5/M5 verification record: complete self-audit catalog coverage, repeated fingerprint stability, report-contract enums, terminal/JSON parity, release-file checks, malicious-fixture non-execution, redaction, and control-like input handling were exercised; the M5 tests ran 7 cases successfully.
 - Phase 6/M6.1 verification record: plan-only no-child behavior, explicit authorization/denial, Docker-isolated offline plan flags, read-only mount metadata, fixed resource limits, sandbox validation, no-host-fallback behavior, timeout termination, bounded output, source-manifest comparison, Docker-unavailable behavior, Docker startup-failure handling, receipt redaction, invalid-limit handling, explicit report-schema coverage, and CLI terminal/JSON integration were exercised; 21 M6/M6.1 tests ran successfully. Actual Docker image execution remains unavailable on the current machine.
 - Phase 7/M7 verification record: all 13 registered P0 checks have bundled explanations covering applicability, purpose, bounded algorithm, evidence, limitations, remediation, and test references; 9 CLI/metadata/determinism/isolation tests passed. The command is repository-independent and does not call the audit pipeline.
+- Phase 8/M8 verification record: compatible local reports are compared by stable finding ID and audit fingerprint; added, resolved, unchanged, and changed categories, conservative direction labels, invalid-input handling, bounded finding output, dedicated contract artifacts, deterministic ordering, output files, and audit-pipeline isolation were exercised; 14 comparison tests passed. Actual Python 3.12.8, Make, Docker, and clean Linux verification remain unavailable.
 - Example-fixture verification record: `examples/clean-python` and `examples/defective-python` are audited through the real CLI; the focused fixture tests cover expected clean/defective statuses and verify that static audits leave both repositories unchanged.
 
 ## 4. Quality review
@@ -78,11 +79,11 @@ The review found and handled these items:
 5. **Open, medium — build evidence:** Python 3.12.8 setup, lockfile installation, `make test`, Docker build, and clean-checkout commands are specified but not executed because the required tools are unavailable on the current machine. Impact: ColdStart cannot yet claim that it builds or passes target-environment tests.
 6. **Open, low — owner terminology:** “Save repositories” is documented as the assumption “accept and scan repositories”; “Zone report with documented sigma” is documented as the assumption “JSON report with documented schema.” Owner confirmation is still required.
 7. **Open, medium — heuristic limits:** Static dependency, secret, documentation, and path checks can produce indicators rather than proof. Fixtures and false-positive review are release gates.
-8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. M7 `explain` is implemented as one bounded offline P1 slice; baseline/diff and profiles remain P1, and plan-only verification is implemented in the bounded M6 slice and remains explicitly optional.
-9. **Informational — Phase 1/M1/M2/M3/M4/M5/M6/M6.1/M7 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, complete P0 static catalog, available-environment hardening/self-audit coverage, Docker-isolated explicit verification slice, and offline rule explanations are present. Exact Python 3.12.8, Make, Docker, clean-build, and Docker-enabled authorized project test/build evidence is unavailable on the current machine.
+8. **Low — advanced-roadmap expansion:** Evidence strength, fingerprinting, self-audit, and no P0 staging were promoted into P0 because they strengthen trust without adding execution complexity. M7 `explain` and M8 baseline/diff are implemented as bounded offline P1 slices; profiles remain P1, and plan-only verification is implemented in the bounded M6 slice and remains explicitly optional.
+9. **Informational — Phase 1/M1/M2/M3/M4/M5/M6/M6.1/M7/M8 implementation:** The design baseline, foundation, smallest safe audit/report core, bounded discovery/applicability slice, complete P0 static catalog, available-environment hardening/self-audit coverage, Docker-isolated explicit verification slice, offline rule explanations, and deterministic baseline comparison are present. Exact Python 3.12.8, Make, Docker, clean-build, and Docker-enabled authorized project test/build evidence is unavailable on the current machine.
 
 No blocking contradiction remains in the written specification. The open items are clearly marked and do not authorize claims that unavailable target checks passed.
 
 ## 6. Completion rule
 
-The documentation audit is complete through Phase 7 because all blocking contradictions were corrected, M6.1 and M7 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. Docker-enabled verification and target-runtime/build gates remain future work and must not be reported as passed before actual execution.
+The documentation audit is complete through Phase 8 because all blocking contradictions were corrected, M6.1, M7, and M8 implementation and available-environment checks are recorded, unresolved issues have impact statements, and unavailable implementation/build checks remain explicitly unverified. Docker-enabled verification and target-runtime/build gates remain future work and must not be reported as passed before actual execution.

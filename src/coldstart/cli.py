@@ -14,6 +14,7 @@ from .boundary import (
     safe_text,
     validate_output_path,
 )
+from .comparison import ComparisonValidationError, compare_reports
 from .execution import (
     MAX_OUTPUT_LIMIT_BYTES,
     MAX_TIMEOUT_SECONDS,
@@ -22,7 +23,7 @@ from .execution import (
     execute_execution_plan,
 )
 from .explanation import UnknownCheckError, explanation_for, render_explanation
-from .reporting import serialize_report, write_report
+from .reporting import serialize_comparison, serialize_report, write_report
 from .version import (
     CHECK_CATALOG_VERSION,
     REPORT_SCHEMA_VERSION,
@@ -86,6 +87,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     explain_parser.add_argument("check_id", metavar="CHECK_ID")
     explain_parser.set_defaults(handler=_run_explain)
+
+    compare_parser = subparsers.add_parser(
+        "compare", help="compare a current audit report with a baseline report"
+    )
+    compare_parser.add_argument("current_report", metavar="CURRENT_REPORT")
+    compare_parser.add_argument("baseline_report", metavar="BASELINE_REPORT")
+    compare_parser.add_argument(
+        "--format",
+        dest="compare_format",
+        choices=("terminal", "json"),
+        default=None,
+        help="select terminal or JSON comparison output (default: terminal)",
+    )
+    compare_parser.add_argument(
+        "--output",
+        dest="compare_output",
+        metavar="PATH",
+        default=None,
+        help="write the comparison to an existing parent directory",
+    )
+    compare_parser.set_defaults(handler=_run_compare)
 
     audit_parser = subparsers.add_parser(
         "audit", help="run a safe, non-executing static audit"
@@ -228,6 +250,31 @@ def _run_explain(args: argparse.Namespace) -> int:
         return 2
     sys.stdout.write(render_explanation(explanation))
     return 0
+
+
+def _run_compare(args: argparse.Namespace) -> int:
+    """Compare two local reports without auditing or executing a repository."""
+
+    output_format = args.compare_format or args.global_format or "terminal"
+    output = args.compare_output or args.global_output
+    try:
+        output_path = validate_output_path(output)
+        result = compare_reports(args.current_report, args.baseline_report)
+        rendered = serialize_comparison(result, output_format)
+        if output_path is None:
+            sys.stdout.write(rendered)
+        else:
+            write_report(rendered, output_path)
+        return 0
+    except (ComparisonValidationError, OutputValidationError) as error:
+        print(f"ColdStart: {safe_text(error)}", file=sys.stderr)
+        return 2
+    except OSError:
+        print("ColdStart: could not write the requested comparison output", file=sys.stderr)
+        return 2
+    except Exception:
+        print("ColdStart: internal error while comparing reports", file=sys.stderr)
+        return 4
 
 
 def _run_audit(args: argparse.Namespace) -> int:

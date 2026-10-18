@@ -1,7 +1,7 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** Phase 6.1 Docker-isolation and M7 explanation slices tested under the available interpreter; target-runtime/build verification pending
-**Version:** 0.9
+**Status:** Phase 6.1 Docker-isolation, M7 explanation, and M8 comparison slices tested under the available interpreter; target-runtime/build verification pending
+**Version:** 1.0
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
 ## 1. Purpose
@@ -168,6 +168,9 @@ The following checks were actually run in the current workspace:
 - `PYTHONPATH=src python -m unittest tests.test_phase7_m7_explain -v` — 9 M7 rule-explanation tests passed under Python 3.14.7.
 - `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M7 — 133 tests passed with 3 platform-expected skips under Python 3.14.7.
 - `PYTHONPATH=src python -m coldstart explain CS-DEPS-001` — printed the complete offline rule explanation with no repository path or audit execution.
+- `PYTHONPATH=src python -m unittest tests.test_phase8_m8_compare -v` — 14 M8 baseline-comparison tests passed under Python 3.14.7.
+- `PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v` after M8 — 147 tests passed with 3 platform-expected skips under Python 3.14.7.
+- `PYTHONPATH=src python -m coldstart compare docs/contracts/report-v1.example.json docs/contracts/report-v1.example.json --format json` — produced a valid unchanged comparison with matching fingerprints and no repository audit.
 - `PYTHONPATH=src python -m coldstart audit examples/clean-python --format json` — exited `0` with no failed/error findings.
 - `PYTHONPATH=src python -m coldstart audit examples/defective-python --format json` — exited `1` with expected static findings and no fixture execution.
 - `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --plan --format json` — produced a Docker-isolated plan with `network_mode=none`, `--pull=never`, read-only `/workspace` mount, fixed resource limits, explicit authorization, and no execution receipt; the current repository static preflight returned its own findings exit code.

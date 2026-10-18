@@ -1,6 +1,6 @@
 # ColdStart MVP Scope and Acceptance
 
-**Status:** P0 approved; M6 P1 verification slice is implemented with target-environment limits
+**Status:** P0 approved; M6 verification, M7 explanations, and M8 baseline comparison are implemented with target-environment limits
 **Version:** 0.3
 **MVP principle:** Ship a reliable Python-focused static auditor before adding execution or ecosystem breadth.
 

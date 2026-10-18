@@ -1,7 +1,7 @@
 # ColdStart Test Strategy
 
-**Status:** M1/M2/M3/M4/M5/M6/M6.1/M7 tests implemented and passing in the available environment; target-runtime execution tests remain open
-**Version:** 0.9
+**Status:** M1/M2/M3/M4/M5/M6/M6.1/M7/M8 tests implemented and passing in the available environment; target-runtime execution tests remain open
+**Version:** 1.0
 **Canonical command after implementation:** `make test`
 
 ## 1. Purpose and principles
@@ -30,7 +30,7 @@ Run the P0 engine over checked-in fixtures. Verify clean/defective findings, par
 
 Invoke the real CLI in temporary directories. Cover help/version, valid/invalid paths, terminal/JSON output, output paths, configuration, no-color output, stderr, and every exit code.
 
-P1 CLI tests cover the implemented `explain CHECK_ID` command in `tests/test_phase7_m7_explain.py`, plus planned `compare CURRENT BASELINE`, policy profiles, and `verify --plan` coverage. Plan-only tests must prove that no child process starts. Explanation tests must prove that every registered P0 check has complete metadata, unknown IDs fail closed, output is deterministic, no repository is required, and the audit pipeline is not called.
+P1 CLI tests cover the implemented `explain CHECK_ID` command in `tests/test_phase7_m7_explain.py` and `compare CURRENT_REPORT BASELINE_REPORT` in `tests/test_phase8_m8_compare.py`, plus planned policy profiles and `verify --plan` coverage. Plan-only tests must prove that no child process starts. Explanation tests must prove complete offline metadata; comparison tests must prove compatibility validation, all change categories, fingerprint handling, deterministic ordering, safe diagnostics, and audit-pipeline isolation.
 
 ### Report-schema tests
 
@@ -143,6 +143,7 @@ Fixtures are synthetic and contain no real credentials or external data.
 | ColdStart self-audit | P0 | A release-candidate checkout produces a real report with reviewed findings and no simulated result |
 | Baseline/diff | P1 | Added, resolved, unchanged, and severity/status-changed findings are identified by stable check ID |
 | `explain CHECK_ID` | P1 | Every registered P0 check has purpose, applicability, algorithm, evidence, limitations, remediation, and test references; `tests/test_phase7_m7_explain.py` |
+| `compare CURRENT_REPORT BASELINE_REPORT` | P1 | Compatible reports produce deterministic added/resolved/unchanged/changed categories and fingerprint comparison; `tests/test_phase8_m8_compare.py` |
 | Policy profiles | P1 | Beginner, strict, and CI profiles produce documented policy differences without hiding or reclassifying findings |
 | `verify --plan` | P1 | The plan shows command, working directory, network, limits, and side effects and launches no child process |
 
@@ -171,6 +172,6 @@ The current offline application suite is implemented and runs with the standard 
 PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-It ran 136 tests under Python 3.14.7: 133 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. The M4-specific modules ran 38 tests with 37 passes and one symlink skip. The M5 hardening module ran 7 tests with 7 passes. The M6 execution module ran 13 tests with 13 passes, the M6 CLI module ran 5 tests with 5 passes, the committed example-fixture module ran 2 tests with 2 passes, the M6 contract module ran 3 tests with 3 passes, and the M7 explanation module ran 9 tests with 9 passes. Compile checks also passed with `python -m compileall -q src build_backend tests examples`.
+It ran 150 tests under Python 3.14.7: 147 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. The M4-specific modules ran 38 tests with 37 passes and one symlink skip. The M5 hardening module ran 7 tests with 7 passes. The M6 execution module ran 13 tests with 13 passes, the M6 CLI module ran 5 tests with 5 passes, the committed example-fixture module ran 2 tests with 2 passes, the M6 contract module ran 3 tests with 3 passes, the M7 explanation module ran 9 tests with 9 passes, and the M8 comparison module ran 14 tests with 14 passes. Compile checks also passed with `python -m compileall -q src build_backend tests examples`.
 
 The exact Python 3.12.8 environment, `make test`, Docker build/run, clean Linux checkout, and actual Docker image execution remain unverified or planned. The M6.1 tests verify the Docker isolation plan, read-only mount, fixed resource limits, no-host-fallback rule, and missing-Docker `not_verified` behavior. These checks must not be inferred from the available Python 3.14.7 run.

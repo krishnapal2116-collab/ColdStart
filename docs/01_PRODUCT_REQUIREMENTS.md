@@ -1,6 +1,6 @@
 # ColdStart Product Requirements
 
-**Status:** P0 approved; M6 verification and M7 offline rule-explanation slices implemented, target execution gates remain open
+**Status:** P0 approved; M6 verification, M7 rule-explanation, and M8 baseline-comparison slices implemented, target execution gates remain open
 **Version:** 0.3
 **Requirement language:** `MUST` is release-blocking; `SHOULD` is strongly preferred; `MAY` is optional. All requirements below have a priority and a testable completion definition.
 
@@ -68,7 +68,7 @@
 | FR-018 | P1 | Propose and run an explicitly authorized offline test verification. | The implemented runner emits a Docker-isolated plan, requires explicit authorization, and records a bounded receipt for a safe direct Python test; missing Docker or image capability remains `not_verified`, never a pass. |
 | FR-019 | P1 | Propose and attempt an explicitly authorized clean Docker build. | The implemented runner uses fixed structured Docker argv and records actual exit status or a truthful unavailable receipt; Docker-enabled build evidence remains pending. |
 | FR-020 | P1 | Export SARIF when it can be done without contract or safety compromise. | A valid SARIF fixture is produced or the feature remains clearly unavailable. |
-| FR-021 | P1 | Compare a new audit with a user-supplied baseline. | Added, removed, and changed findings are deterministic in a dedicated test. |
+| FR-021 | P1 | Compare a new audit with a user-supplied baseline. | `coldstart compare CURRENT_REPORT BASELINE_REPORT` deterministically reports added, resolved, unchanged, and changed findings. |
 | FR-022 | P1 | Add one additional well-supported repository type after Python is stable. | The additional adapter has its own catalog, fixtures, contract, and documentation. |
 | FR-023 | P2 | Generate AI-authored fixes or depend on AI judgments. | Deferred: no implementation or acceptance test is permitted in the first release. |
 | FR-024 | P2 | Modify the inspected repository automatically. | Deferred: all remediation is advisory and no write path exists in the MVP. |
@@ -78,7 +78,7 @@
 | FR-028 | P0 | Classify finding evidence deterministically as `direct`, `derived`, `indicator`, `absence`, or `unverified`. | Contract and fixture tests reject missing/unknown evidence-strength values and confirm no percentage confidence is emitted. |
 | FR-029 | P0 | Include a deterministic audit fingerprint in every normalized report. | Equivalent bounded inputs, tool version, policy, and catalog produce the same fingerprint; timestamps and run IDs do not affect it. |
 | FR-030 | P0 | ColdStart MUST audit its own release-candidate repository before release. | Release evidence contains an actual self-audit report and a reviewed result. |
-| FR-031 | P1 | Compare a current report with a baseline using findings and audit fingerprints. | A comparison identifies added, resolved, unchanged, and worsened findings deterministically. |
+| FR-031 | P1 | Compare a current report with a baseline using findings and audit fingerprints. | The comparison identifies added, resolved, unchanged, and changed findings, reports fingerprint changes separately, and labels conservative direction when status/severity changes. |
 | FR-032 | P1 | Explain a stable check ID without using an AI service. | `coldstart explain CHECK_ID` shows purpose, applicability, algorithm, evidence, limitations, and remediation. |
 | FR-033 | P1 | Provide beginner, strict, and CI policy profiles without changing rule semantics. | Profile tests show only documented policy/presentation differences and preserve all findings. |
 | FR-034 | P1 | Preview an execution plan without executing it. | `verify --plan` displays command, working directory, network, limits, and side effects while producing no child process; the M6 CLI test covers this. |

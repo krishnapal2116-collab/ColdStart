@@ -1,9 +1,9 @@
 # ColdStart Requirement Traceability
 
-**Status:** M1/M2/M3/M4/M5/M6/M6.1 verification slices and M7 rule explanations implemented and tested; target execution gates remain open
-**Version:** 0.9
+**Status:** M1/M2/M3/M4/M5/M6/M6.1 verification slices, M7 rule explanations, and M8 baseline comparison implemented and tested; target execution gates remain open
+**Version:** 1.0
 
-This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. M6 implements the explicit plan/authorization/receipt slice for P1 verification. M6.1 adds Docker-backed offline test isolation. M7 adds repository-independent explanations for every registered P0 check; target-runtime and Docker image execution remain unverified.
+This matrix is the authoritative link between requirements, modules, checks/contracts, tests, acceptance criteria, and verification method. Rows are implemented only where the corresponding code, tests, and actual command output exist; documentation does not count as implementation evidence. M1/M2 cover the safe audit/report foundation and bounded discovery/applicability. M3 covers dependency, lockfile, runtime, and setup-documentation checks. M4 completes the remaining seven P0 static catalog checks. M6 implements the explicit plan/authorization/receipt slice for P1 verification. M6.1 adds Docker-backed offline test isolation. M7 adds repository-independent explanations for every registered P0 check. M8 adds deterministic local baseline comparison; target-runtime and Docker image execution remain unverified.
 
 ## 1. Functional requirements
 
@@ -29,7 +29,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | FR-018 | Authorized offline tests | P1 | `execution` | Verify receipt | `test_execution_authorization` | Actual receipt or unknown | Docker/integration |
 | FR-019 | Authorized Docker build | P1 | `execution` | Verify receipt | `test_docker_build_receipt` | Actual build result | Docker/integration |
 | FR-020 | SARIF export | P1 | `reporting` | SARIF contract | `test_sarif_output_if_enabled` | Valid or clearly deferred | Contract |
-| FR-021 | Baseline comparison | P1 | `policy`, `reporting` | Baseline format | `test_baseline_diff` | Stable changes | Integration |
+| FR-021 | Baseline comparison | P1 | `comparison`, `cli`, `reporting` | Comparison schema | `tests/test_phase8_m8_compare.py` | Stable added/resolved/changed output | Integration |
 | FR-022 | Additional adapter | P1 | `checks/<adapter>` | New catalog | `test_second_adapter_contract` | Full adapter evidence | Integration |
 | FR-023 | AI fixes/judgments | P2 | none | Explicit non-goal | `test_no_ai_dependency` | No P0 path requires AI | Review |
 | FR-024 | Auto-modification | P2 | none | Read-only contract | `test_no_repository_write_path` | No write API | Security |
@@ -39,7 +39,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 | FR-028 | Evidence-strength taxonomy | P0 | `findings`, `reporting` | Finding schema | `test_evidence_strength_contract` | Stable class, no invented percentage | Contract |
 | FR-029 | Audit fingerprint | P0 | `findings`, `reporting` | Report repository field | `test_fingerprint_stability` | Equivalent inputs yield same fingerprint | Determinism |
 | FR-030 | ColdStart self-audit | P0 | release process, `cli` | Release gate | `test_self_audit_fixture` | Release evidence contains actual self-audit | Release/integration |
-| FR-031 | Baseline comparison | P1 | `policy`, `reporting` | Compare command | `test_baseline_diff` | Added/resolved/changed findings are stable | Integration |
+| FR-031 | Baseline comparison | P1 | `comparison`, `cli`, `reporting` | Compare command and fingerprints | `tests/test_phase8_m8_compare.py` | Finding categories and fingerprint changes are stable | Integration |
 | FR-032 | Rule explanation | P1 | `cli`, `explanation`, `catalog` | Explain command | `tests/test_phase7_m7_explain.py` | Catalog explanation is complete and offline | CLI |
 | FR-033 | Policy profiles | P1 | `config`, `policy` | Profile option | `test_policy_profiles` | Profiles preserve rule/status semantics | Contract/CLI |
 | FR-034 | Plan-only verification | P1 | `execution`, `cli` | Verify plan | `test_verify_plan_no_child` | Plan displays constraints without execution | Security/CLI |
@@ -156,3 +156,7 @@ Coverage is provided by `tests/test_phase6_m6_execution.py` (13 tests), `tests/t
 ## 11. M7 rule-explanation slice
 
 FR-032 is implemented by `src/coldstart/explanation.py` and the `explain CHECK_ID` CLI handler. The command uses immutable bundled metadata for all 13 registered catalog checks, reports applicability, purpose, algorithm, evidence, limitations, remediation, and test references, and rejects unknown IDs without inspecting a repository or invoking the audit pipeline. `tests/test_phase7_m7_explain.py` covers metadata completeness, CLI availability, required sections, determinism, no-repository operation, unknown-ID handling, help output, and audit-pipeline isolation; all 9 focused tests and the 136-test integrated suite passed with 3 platform-expected skips under Python 3.14.7. The M7 feature does not change report schema `1.0`, catalog IDs, finding statuses, or P0 audit semantics.
+
+## 12. M8 baseline-comparison slice
+
+FR-021 and FR-031 are implemented by `src/coldstart/comparison.py`, the dedicated comparison renderers, and the `compare CURRENT_REPORT BASELINE_REPORT` CLI handler. The command validates exact report schema/catalog compatibility, rejects malformed, duplicate, unsafe, or incompatible report input, compares all normalized findings by stable check ID, separately compares audit fingerprints, and exposes `added`, `resolved`, `unchanged`, and `changed` categories with conservative direction labels. Comparison output contains only bounded finding summaries rather than full untrusted evidence or messages. `tests/test_phase8_m8_compare.py` covers all categories, direction, fingerprint-only changes, ordering determinism, terminal/JSON output, output files, invalid inputs, duplicate IDs, bounded output, contract artifacts, help, and audit-pipeline isolation. Compatible differences return `0`; invalid inputs return `2`. The comparison contract is separate from audit report schema `1.0`.

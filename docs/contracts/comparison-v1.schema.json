@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:coldstart:comparison:1.0",
+  "title": "ColdStart Comparison Schema 1.0",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "comparison_schema_version",
+    "tool",
+    "invocation",
+    "current",
+    "baseline",
+    "fingerprint",
+    "summary",
+    "changes",
+    "exit_code"
+  ],
+  "properties": {
+    "comparison_schema_version": { "const": "1.0" },
+    "tool": { "$ref": "#/$defs/tool" },
+    "invocation": { "$ref": "#/$defs/invocation" },
+    "current": { "$ref": "#/$defs/report_reference" },
+    "baseline": { "$ref": "#/$defs/report_reference" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "changes": { "$ref": "#/$defs/changes" },
+    "exit_code": { "const": 0 }
+  },
+  "$defs": {
+    "tool": {
+      "type": "object",
+      "required": ["name", "version", "catalog_version"],
+      "properties": {
+        "name": { "const": "coldstart" },
+        "version": { "type": "string", "minLength": 1 },
+        "catalog_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "invocation": {
+      "type": "object",
+      "required": ["command", "format"],
+      "properties": {
+        "command": { "const": "compare" },
+        "format": { "enum": ["terminal", "json"] }
+      },
+      "additionalProperties": true
+    },
+    "report_reference": {
+      "type": "object",
+      "required": ["label", "audit_fingerprint"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "audit_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
+    "fingerprint": {
+      "type": "object",
+      "required": ["comparison", "current", "baseline"],
+      "properties": {
+        "comparison": { "enum": ["unchanged", "changed"] },
+        "current": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "baseline": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
+    "summary": {
+      "type": "object",
+      "required": ["added", "resolved", "unchanged", "changed"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "unchanged": { "type": "integer", "minimum": 0 },
+        "changed": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "finding": {
+      "type": "object",
+      "required": ["check_id"],
+      "properties": {
+        "check_id": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string" },
+        "status": { "type": "string" },
+        "title": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "added_or_resolved": {
+      "type": "object",
+      "required": ["check_id", "finding"],
+      "properties": {
+        "check_id": { "type": "string", "minLength": 1 },
+        "finding": { "$ref": "#/$defs/finding" }
+      },
+      "additionalProperties": true
+    },
+    "unchanged": {
+      "type": "object",
+      "required": ["check_id", "severity", "status"],
+      "properties": {
+        "check_id": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "changed": {
+      "type": "object",
+      "required": ["check_id", "direction", "changed_fields", "baseline", "current"],
+      "properties": {
+        "check_id": { "type": "string", "minLength": 1 },
+        "direction": { "enum": ["worsened", "improved", "changed"] },
+        "changed_fields": { "type": "array", "items": { "type": "string" } },
+        "baseline": { "$ref": "#/$defs/finding" },
+        "current": { "$ref": "#/$defs/finding" }
+      },
+      "additionalProperties": true
+    },
+    "changes": {
+      "type": "object",
+      "required": ["added", "resolved", "unchanged", "changed"],
+      "properties": {
+        "added": { "type": "array", "items": { "$ref": "#/$defs/added_or_resolved" } },
+        "resolved": { "type": "array", "items": { "$ref": "#/$defs/added_or_resolved" } },
+        "unchanged": { "type": "array", "items": { "$ref": "#/$defs/unchanged" } },
+        "changed": { "type": "array", "items": { "$ref": "#/$defs/changed" } }
+      },
+      "additionalProperties": true
+    }
+  }
+}

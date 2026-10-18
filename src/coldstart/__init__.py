@@ -17,6 +17,11 @@ from .config import (
     parse_config,
     parse_policy,
 )
+from .comparison import (
+    ComparisonResult,
+    ComparisonValidationError,
+    compare_reports,
+)
 from .discovery import (
     DetectionCandidate,
     DetectionResult,
@@ -41,18 +46,22 @@ from .findings import (
 )
 from .version import (
     CHECK_CATALOG_VERSION,
+    COMPARISON_SCHEMA_VERSION,
     REPORT_SCHEMA_VERSION,
     __version__,
 )
 
 __all__ = [
     "CHECK_CATALOG_VERSION",
+    "COMPARISON_SCHEMA_VERSION",
     "EVIDENCE_STRENGTH_VALUES",
     "REPORT_SCHEMA_VERSION",
     "STATUS_VALUES",
     "__version__",
     "Applicability",
     "ApplicabilityDecision",
+    "ComparisonResult",
+    "ComparisonValidationError",
     "AuditOptions",
     "AuditReport",
     "AuditResult",
@@ -70,6 +79,7 @@ __all__ = [
     "PolicyConfig",
     "audit",
     "build_applicability",
+    "compare_reports",
     "decide_applicability",
     "detect_project_types",
     "detect_projects",

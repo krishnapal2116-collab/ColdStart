@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from .boundary import OutputValidationError, safe_text, validate_output_path
+from .comparison import ComparisonResult
 from .findings import AuditReport, SEVERITY_RANK, validate_report
 
 
@@ -27,6 +28,20 @@ def render_json(report: AuditReport | Mapping[str, object]) -> str:
     return (
         json.dumps(
             report_dict(report),
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    )
+
+
+def render_comparison_json(result: ComparisonResult) -> str:
+    """Render one newline-terminated deterministic comparison document."""
+
+    return (
+        json.dumps(
+            result.to_dict(output_format="json"),
             ensure_ascii=True,
             sort_keys=True,
             separators=(",", ":"),
@@ -228,6 +243,83 @@ def render_terminal(
     return "\n".join(lines) + "\n"
 
 
+def _comparison_finding_text(finding: Mapping[str, object]) -> str:
+    return (
+        f"{_terminal_text(finding.get('check_id', 'UNKNOWN'))} "
+        f"[{_terminal_text(finding.get('severity', 'unknown'))}/"
+        f"{_terminal_text(finding.get('status', 'unknown'))}] "
+        f"{_terminal_text(finding.get('title', ''))}"
+    )
+
+
+def render_comparison_terminal(result: ComparisonResult) -> str:
+    """Render a stable plain-text comparison without changing its semantics."""
+
+    value = result.to_dict(output_format="terminal")
+    current = value["current"]
+    baseline = value["baseline"]
+    fingerprint = value["fingerprint"]
+    summary = value["summary"]
+    changes = value["changes"]
+    lines = [
+        "ColdStart report comparison",
+        f"Current fingerprint: {_terminal_text(current['audit_fingerprint'])}",
+        f"Baseline fingerprint: {_terminal_text(baseline['audit_fingerprint'])}",
+        f"Fingerprint comparison: {_terminal_text(fingerprint['comparison'])}",
+        "Summary: "
+        + " ".join(
+            f"{name}={int(summary[name])}"
+            for name in ("added", "resolved", "unchanged", "changed")
+        ),
+    ]
+    for name in ("added", "resolved"):
+        entries = changes[name]
+        lines.append(f"{name.capitalize()}:")
+        if not entries:
+            lines.append("  (none)")
+            continue
+        for entry in entries:
+            finding = entry["finding"]
+            if isinstance(finding, Mapping):
+                lines.append(f"  - {_comparison_finding_text(finding)}")
+    lines.append("Unchanged:")
+    unchanged = changes["unchanged"]
+    if not unchanged:
+        lines.append("  (none)")
+    else:
+        for entry in unchanged:
+            lines.append(
+                "  - "
+                f"{_terminal_text(entry['check_id'])} "
+                f"[{_terminal_text(entry['severity'])}/"
+                f"{_terminal_text(entry['status'])}]"
+            )
+    lines.append("Changed:")
+    changed = changes["changed"]
+    if not changed:
+        lines.append("  (none)")
+    else:
+        for entry in changed:
+            baseline_finding = entry["baseline"]
+            current_finding = entry["current"]
+            if not isinstance(baseline_finding, Mapping) or not isinstance(
+                current_finding, Mapping
+            ):
+                continue
+            lines.append(
+                "  - "
+                f"{_terminal_text(entry['check_id'])} "
+                f"direction={_terminal_text(entry['direction'])} "
+                f"fields={','.join(_terminal_text(item) for item in entry['changed_fields'])} "
+                f"severity={_terminal_text(baseline_finding['severity'])}->"
+                f"{_terminal_text(current_finding['severity'])} "
+                f"status={_terminal_text(baseline_finding['status'])}->"
+                f"{_terminal_text(current_finding['status'])}"
+            )
+    lines.append("Exit code: 0")
+    return "\n".join(lines) + "\n"
+
+
 def serialize_report(
     report: AuditReport | Mapping[str, object],
     output_format: str,
@@ -239,6 +331,16 @@ def serialize_report(
     if output_format == "terminal":
         return render_terminal(report, exit_code=exit_code)
     raise ValueError(f"unsupported report format: {output_format}")
+
+
+def serialize_comparison(result: ComparisonResult, output_format: str) -> str:
+    """Serialize a comparison using its dedicated terminal/JSON contract."""
+
+    if output_format == "json":
+        return render_comparison_json(result)
+    if output_format == "terminal":
+        return render_comparison_terminal(result)
+    raise ValueError(f"unsupported comparison format: {output_format}")
 
 
 def write_report(text: str, output_path: str | Path) -> None:

@@ -1,0 +1,44 @@
+{
+  "comparison_schema_version": "1.0",
+  "tool": {
+    "name": "coldstart",
+    "version": "0.1.0",
+    "catalog_version": "p0-1"
+  },
+  "invocation": {
+    "command": "compare",
+    "format": "json"
+  },
+  "current": {
+    "label": "current",
+    "audit_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "baseline": {
+    "label": "baseline",
+    "audit_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "fingerprint": {
+    "comparison": "unchanged",
+    "current": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "baseline": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "summary": {
+    "added": 0,
+    "resolved": 0,
+    "unchanged": 1,
+    "changed": 0
+  },
+  "changes": {
+    "added": [],
+    "resolved": [],
+    "unchanged": [
+      {
+        "check_id": "CS-RUNTIME-001",
+        "severity": "info",
+        "status": "passed"
+      }
+    ],
+    "changed": []
+  },
+  "exit_code": 0
+}
