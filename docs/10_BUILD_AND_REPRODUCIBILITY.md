@@ -1,6 +1,6 @@
 # ColdStart Build and Reproducibility Specification
 
-**Status:** M6.1 Docker-isolation, M7 explanation, and M8 comparison slices tested; Python 3.12-compatible runtime and wheel smoke checks pass; exact 3.12.8, Make, and Docker verification remain pending
+**Status:** M6.1 Docker-isolation, M7 explanation, and M8 comparison slices tested; exact project-local Python 3.12.8 runtime and wheel smoke checks pass; Make and Docker verification remain pending
 **Version:** 1.0
 **Build baseline:** Clean Linux first, Windows/macOS static smoke support
 
@@ -177,6 +177,10 @@ The following checks were actually run in the current workspace:
 - `py -3.12 -m compileall -q src build_backend tests examples` — passed under Python 3.12.10.
 - `py -3.12 -m pip wheel --no-deps --no-build-isolation . --wheel-dir <temporary-wheel-dir>` — built `coldstart-0.1.0-py3-none-any.whl` successfully.
 - The built wheel was installed with `--no-index --no-deps` into a temporary Python 3.12.10 virtual environment; installed `version`, `explain`, clean-fixture audit, and comparison smoke commands passed.
+- `.venv3128/Scripts/python.exe --version` — Python 3.12.8.
+- `PYTHONPATH=src .venv3128/Scripts/python.exe -m unittest discover -s tests -p "test_*.py" -q` — 151 tests passed with 3 platform-expected skips under Python 3.12.8.
+- `.venv3128/Scripts/python.exe -m pip wheel --no-deps --no-build-isolation . --wheel-dir <temporary-wheel-dir>` — built `coldstart-0.1.0-py3-none-any.whl` successfully under Python 3.12.8.
+- The Python 3.12.8-built wheel was installed with `--no-index --no-deps` into a temporary virtual environment; installed `version`, `explain`, clean-fixture audit, and comparison smoke commands passed.
 - `PYTHONPATH=src python -m coldstart audit examples/clean-python --format json` — exited `0` with no failed/error findings.
 - `PYTHONPATH=src python -m coldstart audit examples/defective-python --format json` — exited `1` with expected static findings and no fixture execution.
 - `PYTHONPATH=src python -m coldstart verify . --kind tests --offline --plan --format json` — produced a Docker-isolated plan with `network_mode=none`, `--pull=never`, read-only `/workspace` mount, fixed resource limits, explicit authorization, and no execution receipt; the current repository static preflight returned its own findings exit code.
@@ -192,7 +196,6 @@ The following checks were actually run in the current workspace:
 
 The following target checks remain unverified because the current machine does not provide them:
 
-- Exact Python 3.12.8 (`python3.12` is unavailable; `py -3.12` provides compatible Python 3.12.10 instead).
 - GNU Make (`make` was unavailable).
 - Docker (`docker` was unavailable).
 - Docker-backed network-isolated test execution (the M6.1 runner is implemented and reports `not_verified` until Docker and the pinned image are available).

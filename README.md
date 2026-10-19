@@ -4,7 +4,7 @@ ColdStart is a local-first software-repository reproducibility auditor. It helps
 
 ## Current status
 
-**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, M5 offline hardening/self-audit coverage, the M6 verification slice, M6.1 Docker-backed offline test isolation, committed clean/defective demo fixtures, M7 offline rule explanations, and M8 deterministic baseline comparison are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, explicit verification plans, structured authorized test execution, bounded receipts, Docker-backed network isolation, Docker-unavailable handling, fixture acceptance tests, repository-independent explanations for all 13 P0 checks, and comparison of compatible audit reports are implemented. Target-runtime, Make, Docker image availability, and clean project test/build verification remain environment gaps in the current workspace.
+**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, M5 offline hardening/self-audit coverage, the M6 verification slice, M6.1 Docker-backed offline test isolation, committed clean/defective demo fixtures, M7 offline rule explanations, and M8 deterministic baseline comparison are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, explicit verification plans, structured authorized test execution, bounded receipts, Docker-backed network isolation, Docker-unavailable handling, fixture acceptance tests, repository-independent explanations for all 13 P0 checks, and comparison of compatible audit reports are implemented. The exact project-local Python 3.12.8 checks now pass; GNU Make, Docker image availability, and clean Linux verification remain open.
 
 ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. P1 verification is a separate command: it prints a plan, requires `--authorize` before starting a child process, and records a bounded receipt. Docker-based clean builds and network-isolated test execution remain optional capabilities and are not required for static audit usefulness.
 
@@ -67,7 +67,7 @@ PYTHONPATH=src python -m coldstart version
 PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`make test` is the canonical Linux command. The direct source-tree 151-test suite currently passes with 148 tests run and 3 platform-expected skips under Python 3.14.7. Docker build/run, `make test`, and the exact Python 3.12.8 setup must still be verified on an environment that provides those tools.
+`make test` is the canonical Linux command. The project-local Python 3.12.8 suite passes 151 tests with 148 tests run and 3 platform-expected skips. Docker build/run, GNU Make, and clean Linux verification remain pending.
 
 ## P1 verification preview
 
@@ -123,4 +123,4 @@ Static inspection is read-only and non-executing by default. Every finding must 
 
 ## Phase 0, M1, M2, M3, M4, M5, M6, M6.1, M7, and M8 checks
 
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 151-test offline integration/unit suite: 148 tests ran successfully and 3 platform-expected cases were skipped under Python 3.14.7. The current machine lacks Python 3.12.8, `make`, and Docker, so Docker-backed verification remains unverified. ColdStart itself cannot be declared reproducible until the target commands run successfully.
+Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 151-test offline integration/unit suite under the project-local Python 3.12.8 environment: 148 tests ran successfully and 3 platform-expected cases were skipped. GNU Make, Docker-backed verification, and clean Linux reproducibility remain unverified.
