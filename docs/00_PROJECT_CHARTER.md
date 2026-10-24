@@ -1,9 +1,9 @@
 # ColdStart Project Charter
 
-**Status:** Proposed for owner approval
-**Version:** 0.2
+**Status:** Implementation and release-candidate documentation
+**Version:** 1.0
 **Planning date:** 2026-10-15
-**Implementation status:** No application source code has been written
+**Implementation status:** P0 static audit plus optional M6.1 verification, M7 explanations, and M8 comparison are implemented; clean Linux/Docker release evidence remains host-dependent
 
 ## 1. Executive summary
 
@@ -112,15 +112,18 @@ ColdStart differentiates itself through a narrow promise and disciplined evidenc
 - offline unit and integration test fixtures for ColdStart itself;
 - clean-checkout documentation and reproducibility instructions for ColdStart.
 
-### Planned after the P0 MVP is stable
+### Implemented after the P0 MVP stabilized
 
 - Docker-based clean build verification;
 - offline test execution verification in a constrained environment;
-- SARIF export if it can be implemented without weakening the core contract;
 - baseline comparison across audits;
 - a `coldstart explain CHECK_ID` rule-explanation command;
-- built-in beginner, strict, and CI policy profiles;
 - a plan-only verification preview before any P1 execution;
+
+### Future optional work
+
+- SARIF export if it can be implemented without weakening the core contract;
+- built-in beginner, strict, and CI policy profiles;
 - one additional well-supported repository ecosystem.
 
 ### Explicitly outside the first release

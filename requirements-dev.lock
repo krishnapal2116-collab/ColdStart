@@ -1,2 +1,6 @@
-# ColdStart Phase 1 uses unittest from the Python standard library.
-# Third-party development tools are intentionally deferred until they are needed.
+# ColdStart's required development/test command uses unittest from the Python
+# standard library, so this lockfile is intentionally empty.
+#
+# Pytest may be used as an optional local smoke runner when it is already
+# installed, but it is not required by the supported test workflow. Any new
+# required tool must be added here with a pinned version and hashes.

@@ -1,126 +1,256 @@
 # ColdStart
 
-ColdStart is a local-first software-repository reproducibility auditor. It helps developers, maintainers, students, buildathon participants, small teams, and reviewers determine whether a Python repository contains enough evidence for another environment to recreate it.
+[![CI](https://github.com/krishnapal2116-collab/ColdStart/actions/workflows/ci.yml/badge.svg)](https://github.com/krishnapal2116-collab/ColdStart/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Current status
+ColdStart is a local-first command-line auditor for software-repository
+reproducibility. It checks whether a repository declares enough runtime,
+dependency, setup, configuration, test, portability, security, and container
+evidence for another environment to recreate it.
 
-**Phase 0 design freeze, Phase 2/M1, Phase 3/M2 discovery/applicability, M3 Python checks, M4 complete P0 static catalog checks, M5 offline hardening/self-audit coverage, the M6 verification slice, M6.1 Docker-backed offline test isolation, committed clean/defective demo fixtures, M7 offline rule explanations, and M8 deterministic baseline comparison are implemented.** The bounded read-only inventory, Python/Node/unknown/mixed detection, fail-closed local policy, applicability plan, complete static catalog, report evidence, release-file checks, deterministic self-audit, redaction checks, explicit verification plans, structured authorized test execution, bounded receipts, Docker-backed network isolation, Docker-unavailable handling, fixture acceptance tests, repository-independent explanations for all 13 P0 checks, and comparison of compatible audit reports are implemented. The exact project-local Python 3.12.8 checks now pass; GNU Make, Docker image availability, and clean Linux verification remain open.
+The safe default is a deterministic, read-only static audit. ColdStart does
+not execute the inspected repository, install its dependencies, upload source,
+or require an AI service. Optional test and Docker verification is a separate,
+explicitly authorized operation with bounded receipts and no host fallback for
+offline checks.
 
-ColdStart's P0 product is a deterministic, read-only CLI audit. It does not call a generative AI API, upload repository data, install the inspected project's dependencies, or execute repository commands. P1 verification is a separate command: it prints a plan, requires `--authorize` before starting a child process, and records a bounded receipt. Docker-based clean builds and network-isolated test execution remain optional capabilities and are not required for static audit usefulness.
+## What ColdStart checks
 
-ColdStart is a diagnostic tool, not a guarantee that a repository works on every computer.
+- Python runtime and dependency declarations;
+- lockfile and setup-documentation evidence;
+- test-command, configuration, environment-variable, and portability risks;
+- secrets, local paths, build configuration, and container metadata;
+- deterministic terminal or JSON reports with stable check IDs;
+- optional explanations for each registered check; and
+- deterministic comparison of two compatible audit reports.
 
-## Document pack
+ColdStart is a diagnostic tool, not a guarantee that a project works on every
+computer, operating system, service, or future dependency state.
 
-The required implementation-start specification is:
+## Release scope
 
-1. [Project charter](docs/00_PROJECT_CHARTER.md)
-2. [Product requirements](docs/01_PRODUCT_REQUIREMENTS.md)
-3. [MVP scope and acceptance](docs/02_MVP_SCOPE_AND_ACCEPTANCE.md)
-4. [System architecture](docs/03_SYSTEM_ARCHITECTURE.md)
-5. [Threat model](docs/04_THREAT_MODEL.md)
-6. [Privacy and data handling](docs/05_PRIVACY_AND_DATA_HANDLING.md)
-7. [P0 check catalog](docs/06_CHECK_CATALOG.md)
-8. [CLI and report contracts](docs/07_CLI_AND_REPORT_CONTRACTS.md)
-9. [Requirement traceability](docs/08_REQUIREMENT_TRACEABILITY.md)
-10. [Test strategy](docs/09_TEST_STRATEGY.md)
-11. [Build and reproducibility](docs/10_BUILD_AND_REPRODUCIBILITY.md)
-12. [Architecture decisions](docs/11_ARCHITECTURE_DECISIONS.md)
-13. [Implementation and release plan](docs/12_IMPLEMENTATION_AND_RELEASE_PLAN.md)
-14. [Demo and submission plan](docs/13_DEMO_AND_SUBMISSION_PLAN.md)
-15. [Documentation quality audit](docs/14_DOCUMENTATION_AUDIT.md)
+- **P0:** deterministic, read-only repository audit and terminal/JSON report;
+- **P1:** explicitly authorized verification, rule explanations, and baseline
+  comparison; and
+- **P2/future:** automatic fixes, hosted dashboards, AI-generated judgments,
+  broad language coverage, and enterprise policy management.
 
-The machine-readable report contract is documented in `docs/07_CLI_AND_REPORT_CONTRACTS.md` and accompanied by:
+## Quick start
 
-- [Report JSON Schema](docs/contracts/report-v1.schema.json)
-- [Sanitized example report](docs/contracts/report-v1.example.json)
-- [Comparison JSON Schema](docs/contracts/comparison-v1.schema.json)
-- [Sanitized example comparison](docs/contracts/comparison-v1.example.json)
+### Linux, macOS, or WSL
 
-The advanced roadmap is intentionally layered: P0 adds evidence strength, deterministic audit fingerprints, self-audit, and no static staging workspace. M7 implements offline rule explanations and M8 implements baseline comparison; policy profiles and Docker-backed verification remain separate and additive.
+Prerequisites:
 
-## Frozen P0 command for Phase 1
+- Git;
+- Python 3.12.x; Python 3.12.8 is the reference release; and
+- GNU Make for the canonical test command.
 
-```text
-coldstart audit PATH --format terminal
-```
-
-The M1 audit engine validates the selected readable repository boundary, emits a deterministic terminal or JSON report, and returns a documented exit code. M2 adds a bounded metadata inventory, project candidates, catalog applicability decisions, and explicit partial-coverage evidence. M3 evaluates dependency declarations, applicable Python lock evidence, runtime declarations, and setup documentation. M4 completes the remaining seven P0 static checks. M6 adds a separate explicit verification command; all 13 catalog checks remain read-only and non-executing, and they do not claim that project tests or builds ran.
-
-## Phase 1 foundation
-
-Phase 1 provides the package/toolchain foundation, help/version commands, and an offline standard-library test suite. Phase 2/M1 adds the safe `audit` report core, boundary validation, evidence strength, deterministic fingerprints, and terminal/JSON output. Phase 3/M2 adds bounded deterministic discovery, project detection, fail-closed `.coldstart.toml` policy parsing, applicability planning, inventory limits, exclusions, and visible skipped-check evidence. M3 adds static dependency, lockfile, runtime, and setup-documentation findings. M4 completes static test-command, configuration, environment-variable, portability, security, build-configuration, and contained-path findings. M6 adds `verify --plan`, explicit authorization, safe direct Python test execution, bounded receipts, source-manifest comparison, and fixed Docker build planning. M7 adds `explain CHECK_ID`, which reads only bundled catalog metadata and never inspects a repository. M8 adds `compare CURRENT_REPORT BASELINE_REPORT`, which reads two local reports, rejects incompatible inputs, and deterministically reports finding changes. A static pass never implies that verification ran.
-
-Target setup requires Python 3.12.8:
-
-```text
+```bash
+git clone https://github.com/krishnapal2116-collab/ColdStart.git
+cd ColdStart
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r requirements-dev.lock
-.venv/bin/python -m pip install --no-deps -e .
+.venv/bin/python -m pip install --no-deps --no-build-isolation -e .
+make test
 ```
 
-The Phase 1 source-tree smoke commands are:
+If the `python3.12` command is not available, install Python 3.12 through the
+normal package manager for the operating system. Do not replace it with an
+unrelated system Python just to make the command appear to work.
+
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/krishnapal2116-collab/ColdStart.git
+Set-Location -LiteralPath .\ColdStart
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-dev.lock
+.\.venv\Scripts\python.exe -m pip install --no-deps --no-build-isolation -e .
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -q
+```
+
+GNU Make is not required for the static CLI or the Windows test command. WSL
+users can use the Linux commands after installing a WSL2 distribution and
+running the repository from `/mnt/<drive>/ColdStart`.
+
+## Run an audit
+
+The audit command is safe by default and never runs repository code:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m coldstart audit PATH --format terminal
+PYTHONPATH=src .venv/bin/python -m coldstart audit PATH --format json --output report.json
+```
+
+The committed fixtures demonstrate both outcomes:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m coldstart audit examples/clean-python --format terminal
+PYTHONPATH=src .venv/bin/python -m coldstart audit examples/defective-python --format terminal
+```
+
+The clean fixture is expected to pass. The defective fixture intentionally
+reports reproducibility findings and must not execute fixture code.
+
+## Optional verification
+
+Verification is separate from `audit`. Review a plan without starting a child
+process:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m coldstart verify PATH --kind tests --offline --plan
+```
+
+After reviewing the plan, explicitly authorize the Docker-isolated attempt:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m coldstart verify PATH --kind tests --offline --authorize
+```
+
+Offline verification uses Docker with `--network=none`, a read-only repository
+mount, fixed resource limits, and no host fallback. If Docker or its Linux
+engine is unavailable, ColdStart returns `not_verified`; it does not silently
+run the project tests on the host.
+
+Other offline commands:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m coldstart verify PATH --kind docker-build --offline --plan
+PYTHONPATH=src .venv/bin/python -m coldstart explain CS-DEPS-001
+PYTHONPATH=src .venv/bin/python -m coldstart compare current.json baseline.json --format terminal
+```
+
+## Docker image
+
+The Dockerfile builds a Linux image containing the installed ColdStart package,
+not a source-tree `PYTHONPATH` shortcut:
+
+```bash
+docker build --tag coldstart:dev .
+docker run --rm --read-only --network none \
+  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
+  coldstart:dev --help
+```
+
+The first build may download `python:3.12.8-slim-bookworm`. After that image is
+cached, `docker build --pull=false --tag coldstart:offline .` checks the local
+build path without requesting a new base image. Docker Desktop must be running
+with its Linux engine enabled; installing the Docker CLI alone is not enough.
+
+To audit a repository mounted read-only from Linux or WSL:
+
+```bash
+docker run --rm --read-only --network none \
+  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
+  --volume "$PWD:/workspace:ro" \
+  coldstart:dev audit /workspace --format terminal
+```
+
+On Windows PowerShell, use a Windows-compatible volume path or run this command
+inside WSL. The static audit itself does not require Docker.
+
+## Development and testing
+
+`make test` is the canonical offline test command. The Makefile automatically
+uses `.venv/bin/python` on Linux/WSL or `.venv/Scripts/python.exe` on Windows
+when that environment exists; override it with `make test PYTHON=python3.12`
+when necessary.
+
+The direct equivalent is:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+If pytest is already installed, the repository also supports:
+
+```bash
+python -m pytest -q
+```
+
+Pytest is an optional collection runner. It is not a runtime dependency, and
+the standard-library `unittest` suite remains the supported offline test path.
+GitHub Actions runs Linux/Docker and Windows static smoke gates on every push
+and pull request.
+
+## Requirements and packaging
+
+ColdStart currently has no third-party runtime or required development
+dependencies. `requirements.lock` and `requirements-dev.lock` are intentionally
+empty, documented lockfiles. If a dependency is added, it must be pinned with
+hashes in the appropriate file and covered by the release checks.
+
+The package uses a small dependency-free PEP 517/660 build backend under
+`build_backend/`. The Docker image and editable installation build from the
+same `pyproject.toml` metadata.
+
+## Report meanings
+
+- `passed`: the check found the expected evidence;
+- `failed`: the check found a reproducibility risk;
+- `not_applicable`: the check does not apply to the detected project;
+- `skipped`: a local policy explicitly excluded the check;
+- `not_verified`: bounded evidence was unavailable or incomplete; and
+- `error`: ColdStart could not safely evaluate the check.
+
+Static `passed` findings never mean that project tests or builds ran. A
+verification `passed` result requires explicit authorization, an observed exit
+code of zero, completed cleanup, and an unchanged source manifest.
+
+## Project layout
 
 ```text
-PYTHONPATH=src python -m coldstart --help
-PYTHONPATH=src python -m coldstart version
-PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
+src/coldstart/       CLI, audit engine, checks, reports, and verification
+tests/               Standard-library unit and integration tests
+examples/             Clean and deliberately defective audit fixtures
+docs/                  Requirements, contracts, architecture, and release notes
+Dockerfile            Linux container image for the installed CLI
+Makefile              Canonical offline test command
+.github/workflows/    Linux and Docker continuous integration
 ```
 
-`make test` is the canonical Linux command. The project-local Python 3.12.8 suite passes 151 tests with 148 tests run and 3 platform-expected skips. Docker build/run, GNU Make, and clean Linux verification remain pending.
+## Documentation
 
-## P1 verification preview
+- [Project charter](docs/00_PROJECT_CHARTER.md)
+- [Product requirements](docs/01_PRODUCT_REQUIREMENTS.md)
+- [MVP acceptance](docs/02_MVP_SCOPE_AND_ACCEPTANCE.md)
+- [System architecture](docs/03_SYSTEM_ARCHITECTURE.md)
+- [Threat model](docs/04_THREAT_MODEL.md)
+- [Privacy and data handling](docs/05_PRIVACY_AND_DATA_HANDLING.md)
+- [P0 check catalog](docs/06_CHECK_CATALOG.md)
+- [CLI and report contracts](docs/07_CLI_AND_REPORT_CONTRACTS.md)
+- [Test strategy](docs/09_TEST_STRATEGY.md)
+- [Build and reproducibility](docs/10_BUILD_AND_REPRODUCIBILITY.md)
+- [Implementation and release plan](docs/12_IMPLEMENTATION_AND_RELEASE_PLAN.md)
+- [Documentation audit](docs/14_DOCUMENTATION_AUDIT.md)
 
-Review a bounded plan without starting a child process:
+## Troubleshooting
 
-```text
-PYTHONPATH=src python -m coldstart verify PATH --kind tests --offline --plan
-```
+| Symptom | Fix |
+| --- | --- |
+| `ModuleNotFoundError: coldstart` | Install the package in `.venv`, or run with `PYTHONPATH=src`. |
+| `python3.12` is not found | Install Python 3.12.x and recreate `.venv`; the project does not require a global package install. |
+| `make` is not found | Use WSL/Linux with GNU Make, or run the direct `unittest` command on Windows. |
+| Docker CLI cannot connect to its daemon | Start Docker Desktop and select the Linux engine. The CLI being installed is not sufficient. |
+| `wsl` says it is not installed | Enable Windows Subsystem for Linux and Virtual Machine Platform, restart Windows, then install a Linux distribution. |
+| Offline verification returns `not_verified` | This is fail-closed behavior: Docker, the Linux engine, or the pinned image is unavailable. No host fallback is attempted. |
+| Docker build cannot pull the base image | Run the first build with network access, then use `--pull=false` only after `python:3.12.8-slim-bookworm` is cached. |
 
-To explicitly authorize a supported direct Python test command after reviewing the plan:
+## Current verification status
 
-```text
-PYTHONPATH=src python -m coldstart verify PATH --kind tests --authorize
-```
+The repository records commands and results rather than simulating platform
+success. The exact Python 3.12.8 suite and wheel smoke checks pass locally.
+Docker CLI availability does not prove the Docker Linux engine is running, and
+WSL is an optional host integration that must be installed separately. The
+GitHub Actions workflow is the clean Linux/Docker release gate; its result is
+visible in the repository's Actions tab after each push or pull request.
 
-Docker verification uses fixed structured argv and returns `not_verified` with exit code `3` when Docker is unavailable. An authorized `--offline` test uses Docker with `--network=none`, a read-only repository mount, fixed CPU/memory/process limits, and no host fallback. It returns `not_verified` when Docker is unavailable rather than executing tests on the host.
+## Contributing
 
-## P1 rule explanations
+See [CONTRIBUTING.md](CONTRIBUTING.md). Keep changes focused, preserve the
+read-only default, add tests for behavior changes, and report unavailable
+platform services honestly.
 
-Explain any registered P0 check without supplying a repository or starting an audit:
+## License
 
-```text
-PYTHONPATH=src python -m coldstart explain CS-DEPS-001
-```
-
-The command is offline and deterministic. It prints the check's applicability, purpose, bounded algorithm, evidence semantics, limitations, remediation, and test references. Unknown check IDs return usage exit code `2` without producing an audit report.
-
-## P1 baseline comparison
-
-Compare a current audit report with a previous baseline:
-
-```text
-PYTHONPATH=src python -m coldstart compare current.json baseline.json --format terminal
-PYTHONPATH=src python -m coldstart compare current.json baseline.json --format json
-```
-
-The comparison reports `added`, `resolved`, `unchanged`, and `changed` findings by stable check ID, plus whether the audit fingerprints changed. Compatible comparisons return exit code `0`; malformed or incompatible input reports return exit code `2`.
-
-## Committed demo fixtures
-
-The repository includes two real audit targets:
-
-```text
-PYTHONPATH=src python -m coldstart audit examples/clean-python --format terminal
-PYTHONPATH=src python -m coldstart audit examples/defective-python --format terminal
-```
-
-The clean fixture provides complete dependency-free Python evidence. The defective fixture intentionally demonstrates runtime, dependency, documentation, configuration, portability, and container findings without executing fixture code.
-
-## Safety promise
-
-Static inspection is read-only and non-executing by default. Every finding must identify its rule, status, severity, evidence or limitation, and remediation where appropriate. `not_applicable`, `skipped`, and `not_verified` are not passes. ColdStart must never claim tests or builds passed unless an authorized execution actually produced that evidence.
-
-## Phase 0, M1, M2, M3, M4, M5, M6, M6.1, M7, and M8 checks
-
-Phase 0 was checked with Markdown-link, JSON-contract, requirement-ID, whitespace, and cross-document consistency validation. M1/M2/M3/M4/M5/M6/M6.1/M7/M8 have a passing 151-test offline integration/unit suite under the project-local Python 3.12.8 environment: 148 tests ran successfully and 3 platform-expected cases were skipped. GNU Make, Docker-backed verification, and clean Linux reproducibility remain unverified.
+ColdStart is released under the [MIT License](LICENSE).

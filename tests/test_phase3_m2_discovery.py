@@ -374,6 +374,7 @@ class Phase3M2DiscoveryIntegrationTests(unittest.TestCase):
             "source.txt": "source\n",
             ".git/objects/ignored.txt": "git\n",
             ".venv/lib/ignored.txt": "venv\n",
+            ".venv3128/lib/ignored.txt": "pinned venv\n",
             "__pycache__/ignored.pyc": b"cache\n",
             "build/generated.txt": "build\n",
             "dist/generated.txt": "dist\n",
@@ -392,6 +393,10 @@ class Phase3M2DiscoveryIntegrationTests(unittest.TestCase):
             self.assertFalse(
                 path == ".venv" or path.startswith(".venv/"),
                 f"generated .venv path was inventoried: {path}",
+            )
+            self.assertFalse(
+                path == ".venv3128" or path.startswith(".venv3128/"),
+                f"generated .venv3128 path was inventoried: {path}",
             )
             self.assertFalse(
                 path == "__pycache__" or path.startswith("__pycache__/"),

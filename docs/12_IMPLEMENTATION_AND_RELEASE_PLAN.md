@@ -1,6 +1,6 @@
 # ColdStart Implementation and Release Plan
 
-**Status:** M6.1 Docker-backed verification, M7 explanations, and M8 baseline comparison implemented; target verification pending
+**Status:** M6.1 Docker-backed verification, M7 explanations, and M8 baseline comparison implemented; Python 3.12.8 checks pass; Linux/Make/Docker release gates remain host-dependent
 **Version:** 1.0
 **Rule:** Phase 0 was documentation-only. Phase 1 implementation is approved; later slices still require their own checks and must not overclaim unavailable verification.
 
@@ -23,7 +23,7 @@ The existing terminology assumptions remain explicit: “save repositories” me
 
 Phase 0 completion did **not** mean that ColdStart built, ran, or passed tests. It meant that the implementation boundary and design baseline were recorded. Phase 1 is now approved, but its target-runtime and container checks remain subject to actual execution.
 
-The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, Phase 3/M3/M4 static check slices, Phase 5 offline hardening/self-audit coverage, and the first Phase 6 explicit verification slice are present, but the current machine lacks Python 3.12.8, Make, and Docker. Direct host network isolation for `--offline` tests is also unavailable, so exact target-runtime, Make, Docker, and network-isolated acceptance remain unverified.
+The owner approved implementation. The Phase 1 foundation, Phase 2/M1 audit core, Phase 3/M2 discovery/applicability slice, Phase 3/M3/M4 static check slices, Phase 5 offline hardening/self-audit coverage, and the Phase 6 explicit verification slice are present. Exact Python 3.12.8 source and wheel checks pass in the project-local environment. GNU Make, a working Docker Linux engine, WSL, and a clean Linux checkout remain host-dependent and are not claimed as locally passed.
 
 ## 2. Milestone method
 
@@ -33,7 +33,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M0 — Reproducible repository foundation
 
-**Current state:** Foundation implementation present; target-runtime, Make, and Docker checks pending in a suitable environment.
+**Current state:** Foundation implementation present; Python 3.12.8 is verified locally; Linux/Make/Docker checks are covered by the clean-runner release gate.
 
 - **Goal:** Make the ColdStart repository itself buildable and testable.
 - **Requirements:** FR-017, NFR-009, NFR-011.
@@ -48,7 +48,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M1 — Smallest end-to-end static audit
 
-**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
+**Current state:** Implemented and tested under Python 3.14.7 and Python 3.12.8; Linux/Make/Docker checks remain host-dependent.
 
 - **Goal:** `coldstart audit PATH` validates a directory and emits a truthful empty/minimal report.
 - **Requirements:** FR-001, FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-028, FR-029; NFR-001, NFR-002, NFR-015.
@@ -63,7 +63,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M2 — Discovery and applicability
 
-**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
+**Current state:** Implemented and tested under Python 3.14.7 and Python 3.12.8; Linux/Make/Docker checks remain host-dependent.
 
 - **Goal:** Build deterministic bounded inventory and Python/unknown/mixed detection.
 - **Requirements:** FR-003, FR-004, FR-012, FR-014, FR-015; NFR-005, NFR-006, NFR-007.
@@ -79,7 +79,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M3 — Python P0 check slice
 
-**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, and Docker checks remain pending.
+**Current state:** Implemented and tested under Python 3.14.7 and Python 3.12.8; Linux/Make/Docker checks remain host-dependent.
 
 - **Goal:** Implement the first half of the catalog: dependency, lockfile, runtime, and setup checks after M2 discovery.
 - **Requirements:** FR-005, FR-008, FR-016; NFR-012.
@@ -95,7 +95,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M4 — Remaining catalog and release reports
 
-**Current state:** Implemented and tested under Python 3.14.7; exact target-runtime, Make, Docker, and authorized project verification remain pending.
+**Current state:** Implemented and tested under Python 3.14.7 and Python 3.12.8; Docker-backed authorized project verification remains host-dependent.
 
 - **Goal:** Complete the P0 documentation/configuration/path/security/container-discovery checks and expose the complete static catalog in reports.
 - **Requirements:** FR-005, FR-008, FR-009, FR-010, FR-011, FR-012, FR-016; NFR-003, NFR-008.
@@ -111,7 +111,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 
 ### M5 — P0 hardening and clean release candidate
 
-**Current state:** Offline hardening and self-audit coverage implemented and tested under Python 3.14.7; clean Linux, Python 3.12.8, Make, Docker, and authorized project verification remain pending.
+**Current state:** Offline hardening and self-audit coverage implemented and tested under Python 3.14.7 and Python 3.12.8; clean Linux, Make, Docker, and authorized project verification remain host-dependent.
 
 - **Goal:** Demonstrate the small working product under competition constraints.
 - **Requirements:** All P0 FR/NFR; especially FR-013–017, FR-028–030, NFR-001–012, and NFR-015.
@@ -121,13 +121,13 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** `make test`, clean checkout, Docker build/run, security suite, deterministic snapshots, no-network test, and self-audit report review.
 - **Acceptance:** P0 definition of done, 13-check self-audit coverage, reviewed redaction/non-execution evidence, and all release-blocking defects that are testable in the available environment closed.
 - **Failure conditions:** Any false pass, unsafe execution, reproducibility gap, or undocumented requirement.
-- **Verification:** 7 M5 hardening tests pass; integrated suite has 101 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, and clean Linux remain blocked by the environment.
+- **Verification:** 7 M5 hardening tests pass; the exact Python 3.12.8 integrated suite has 151 collected tests with 148 passes and 3 platform-expected skips. Make, Docker, and clean Linux remain blocked by the current host environment.
 - **Git checkpoint:** `release: ColdStart P0 candidate`.
 - **Relative effort:** Large and reserved time.
 
 ### M6 — Optional P1 verification layer
 
-**Current state:** M6.1 Docker-backed offline test isolation is implemented and tested under Python 3.14.7. Plan-only preview, explicit authorization, read-only repository mount, `network=none`, fixed resource limits, bounded receipts, timeout/cleanup, source-manifest comparison, fixed Docker planning, no host fallback, and Docker-unavailable semantics are present. Python 3.12.8, Docker image execution, Docker-enabled builds, and clean Linux remain pending.
+**Current state:** M6.1 Docker-backed offline test isolation is implemented and tested under Python 3.14.7 and Python 3.12.8. Plan-only preview, explicit authorization, read-only repository mount, `network=none`, fixed resource limits, bounded receipts, timeout/cleanup, source-manifest comparison, fixed Docker planning, no host fallback, and Docker-unavailable semantics are present. Actual Docker image execution and clean Linux remain host-dependent.
 
 - **Goal:** Add explicit offline test and clean Docker build verification without changing P0 safety.
 - **Requirements:** FR-018, FR-019, NFR-013, NFR-014.
@@ -137,7 +137,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** Authorization denial, plan-only no-child, Docker plan safety, sandbox validation, read-only mount metadata, no-host-fallback, authorized pass path, timeout, Docker unavailable, cleanup, source unchanged, and CLI report integration.
 - **Acceptance:** No execution occurs without explicit authorization; offline attempts use Docker isolation or return `not_verified`; actual attempts record bounded receipts; host fallback is prohibited.
 - **Failure conditions:** Host fallback, unbounded process, hidden network, or Docker overclaim.
-- **Verification:** 13 M6.1 execution tests, 5 M6.1 CLI tests, and 3 explicit report-contract tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the integrated suite has 124 passing tests with 3 platform-expected skips. Python 3.12.8, Make, Docker, clean Linux, and actual Docker image execution remain blocked or unavailable in the environment.
+- **Verification:** 13 M6.1 execution tests, 5 M6.1 CLI tests, and 3 explicit report-contract tests pass; the committed clean/defective fixture acceptance adds 2 passing tests; the exact Python 3.12.8 integrated suite passes with 3 platform-expected skips. Make, Docker, clean Linux, and actual Docker image execution remain blocked or unavailable on the current host.
 - **Git checkpoints:** `b54c468 feat: add authorized verification flow`; `adc98db fix: keep offline tests fail-closed`.
 - **Relative effort:** Very large; omit if it threatens P0.
 
@@ -152,7 +152,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** `tests/test_phase7_m7_explain.py` covers completeness, all 13 IDs, required output sections, deterministic output, unknown-ID failure, no-repository operation, help, and audit-pipeline isolation.
 - **Acceptance:** P0 remains green, every registered check has purpose/applicability/algorithm/evidence/limitations/remediation/test references, and no new feature changes the meaning of P0 statuses.
 - **Failure conditions:** Scope expansion or contract regression.
-- **Verification:** The focused M7 module passes 9 tests; the integrated suite has 133 passing tests with 3 platform-expected skips under Python 3.14.7. Target-runtime and Docker execution gates remain open.
+- **Verification:** The focused M7 module passes 9 tests; the integrated suite passes under Python 3.12.8 with 3 platform-expected skips. Docker execution remains host-dependent.
 - **Git checkpoint:** `feat: add offline rule explanations`.
 - **Relative effort:** Small.
 
@@ -166,7 +166,7 @@ Work proceeds in vertical slices. Each milestone ends with actual checks, docume
 - **Tests:** `tests/test_phase8_m8_compare.py` covers all categories, worsened/improved direction, fingerprint-only change, order determinism, terminal/JSON output, output files, invalid input, duplicate IDs, bounded finding output, contract artifacts, help, and audit-pipeline isolation.
 - **Acceptance:** Current-first/baseline-second comparison is deterministic; no report paths or raw input documents are emitted; compatible comparisons return `0`; invalid inputs return `2`; P0 semantics remain unchanged.
 - **Failure conditions:** Guessing across schema/catalog versions, duplicate-ID last-write-wins behavior, unsafe diagnostics, or routing comparison through the audit pipeline.
-- **Verification:** The focused M8 module passes 15 tests; the integrated suite has 148 passing tests with 3 platform-expected skips under Python 3.14.7. Target-runtime and Docker execution gates remain open.
+- **Verification:** The focused M8 module passes 15 tests; the integrated suite passes under Python 3.12.8 with 3 platform-expected skips. Docker execution remains host-dependent.
 - **Git checkpoint:** `feat: add deterministic baseline comparison`.
 - **Relative effort:** Medium.
 

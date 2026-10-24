@@ -84,7 +84,7 @@ This matrix is the authoritative link between requirements, modules, checks/cont
 
 ## 4. State rule
 
-Every row above remains `specified/not implemented` unless the implementation, appropriate tests, and actual command output exist. A future audit must use `implemented`, `tested`, `verified`, `deferred`, or `blocked` only with evidence. The implementation-state sections below narrow that rule without claiming target-runtime, Make, Docker, or clean-Linux verification that has not run.
+Every row above remains `specified/not implemented` unless the implementation, appropriate tests, and actual command output exist. A future audit must use `implemented`, `tested`, `verified`, `deferred`, or `blocked` only with evidence. The implementation-state sections below distinguish exact Python 3.12.8 evidence from host-dependent Make, Docker, WSL, and clean-Linux gates.
 
 ## 5. M1 implementation state
 
@@ -103,7 +103,7 @@ The following requirements now have implementation and test evidence in the M2 s
 - `NFR-005`, `NFR-006`, `NFR-007`, and `NFR-012` — partial-coverage findings, file/byte/depth/time bounds, exclusion and symlink handling, and report provenance for limits, policy, inventory, detection, applicability, and limitations.
 - M2 report behavior is covered by `tests/test_phase3_m2_discovery.py`: 19 tests, with 17 executed successfully and 2 platform-expected skips on the current Windows environment.
 
-The integrated offline command currently passes 94 executed tests with 3 platform-expected skips under Python 3.14.7. M2 exposes bounded discovery and applicability; M3 evaluates `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`; M4 evaluates the remaining seven catalog checks. Python 3.12.8, Make, Docker, clean-Linux verification, and P1 project test/build execution remain unverified.
+The integrated offline command now passes under the exact Python 3.12.8 environment with 3 platform-expected skips. M2 exposes bounded discovery and applicability; M3 evaluates `CS-DEPS-001`, `CS-DEPS-002`, `CS-RUNTIME-001`, and `CS-DOCS-001`; M4 evaluates the remaining seven catalog checks. Make, Docker, clean-Linux verification, and P1 project test/build execution remain host-dependent.
 
 ## 7. M3 implementation state
 
@@ -113,7 +113,7 @@ The following requirements now have implementation and test evidence in the M3 s
 - `NFR-012` for M3 rule versions, applicability, evidence, remediation, limitations, and report provenance.
 - M3 coverage is provided by `tests/test_phase3_m3_dependencies.py`, `tests/test_phase3_m3_runtime_docs.py`, and `tests/test_phase3_m3_integration.py`: 26 tests passed under Python 3.14.7.
 
-The M3 slice by itself did not implement `CS-DOCS-002` or the remaining configuration, portability, security, and build-discovery checks; M4 now supplies those static findings. Exact Python 3.12.8, Make, Docker, and clean-Linux verification remain open.
+The M3 slice by itself did not implement `CS-DOCS-002` or the remaining configuration, portability, security, and build-discovery checks; M4 now supplies those static findings. Exact Python 3.12.8 behavior is verified; Make, Docker, and clean-Linux verification remain open on the current host.
 
 ## 8. M4 implementation state
 
@@ -136,7 +136,7 @@ M5 adds `tests/test_phase5_m5_hardening.py`, covering:
 - release-file presence and canonical Makefile/Dockerfile/runtime documentation;
 - malicious-fixture non-execution and control-like/secret-shaped evidence handling.
 
-The M5 module has 7 passing tests under Python 3.14.7. The integrated offline suite has 101 passing tests with 3 platform-expected skips. Exact Python 3.12.8, GNU Make, Docker, clean Linux, and authorized project test/build execution remain unverified.
+The M5 module has 7 passing tests, and the exact Python 3.12.8 integrated offline suite has 151 collected tests with 148 passes and 3 platform-expected skips. GNU Make, Docker, clean Linux, and authorized project test/build execution remain unverified on the current host.
 
 ## 10. M6/M6.1 verification slice
 
@@ -151,11 +151,11 @@ M6 adds `src/coldstart/execution.py`, the distinct `verify` CLI command, receipt
 
 The committed `examples/clean-python` and `examples/defective-python` fixtures complete the P0 demo-input requirement. `tests/test_phase6_m6_examples.py` verifies their expected CLI statuses and read-only behavior.
 
-Coverage is provided by `tests/test_phase6_m6_execution.py` (13 tests), `tests/test_phase6_m6_cli.py` (5 tests), `tests/test_phase6_m6_examples.py` (2 tests), and `tests/test_phase6_m6_contract.py` (3 tests). The M6 integrated suite had 124 passing tests with 3 platform-expected skips under Python 3.14.7 before the M7 slice; this is not evidence for Python 3.12.8, Make, Docker image execution, or a clean Linux environment.
+Coverage is provided by `tests/test_phase6_m6_execution.py` (13 tests), `tests/test_phase6_m6_cli.py` (5 tests), `tests/test_phase6_m6_examples.py` (2 tests), and `tests/test_phase6_m6_contract.py` (3 tests). The exact Python 3.12.8 integrated suite passes with 3 platform-expected skips; this is not evidence for Docker image execution or a clean Linux environment.
 
 ## 11. M7 rule-explanation slice
 
-FR-032 is implemented by `src/coldstart/explanation.py` and the `explain CHECK_ID` CLI handler. The command uses immutable bundled metadata for all 13 registered catalog checks, reports applicability, purpose, algorithm, evidence, limitations, remediation, and test references, and rejects unknown IDs without inspecting a repository or invoking the audit pipeline. `tests/test_phase7_m7_explain.py` covers metadata completeness, CLI availability, required sections, determinism, no-repository operation, unknown-ID handling, help output, and audit-pipeline isolation; all 9 focused tests and the 136-test integrated suite passed with 3 platform-expected skips under Python 3.14.7. The M7 feature does not change report schema `1.0`, catalog IDs, finding statuses, or P0 audit semantics.
+FR-032 is implemented by `src/coldstart/explanation.py` and the `explain CHECK_ID` CLI handler. The command uses immutable bundled metadata for all 13 registered catalog checks, reports applicability, purpose, algorithm, evidence, limitations, remediation, and test references, and rejects unknown IDs without inspecting a repository or invoking the audit pipeline. `tests/test_phase7_m7_explain.py` covers metadata completeness, CLI availability, required sections, determinism, no-repository operation, unknown-ID handling, help output, and audit-pipeline isolation; all 9 focused tests pass, and the exact Python 3.12.8 integrated suite passes with 3 platform-expected skips. The M7 feature does not change report schema `1.0`, catalog IDs, finding statuses, or P0 audit semantics.
 
 ## 12. M8 baseline-comparison slice
 

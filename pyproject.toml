@@ -9,9 +9,24 @@ version = "0.1.0"
 description = "A local-first software-repository reproducibility auditor."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-license = { text = "Unspecified during Phase 1" }
+license = { file = "LICENSE" }
 authors = [{ name = "ColdStart contributors" }]
+keywords = ["reproducibility", "repository-audit", "developer-tools", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/krishnapal2116-collab/ColdStart"
+Issues = "https://github.com/krishnapal2116-collab/ColdStart/issues"
 
 [project.scripts]
 coldstart = "coldstart.cli:main"

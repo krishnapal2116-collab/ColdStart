@@ -1,6 +1,6 @@
 # ColdStart Demo and Submission Plan
 
-**Status:** Committed demo fixtures and commands are implemented; final recording remains pending
+**Status:** Committed demo fixtures, GitHub-facing README, contribution guidance, and CI workflow are implemented; final recording and clean-runner release evidence remain pending
 **Version:** 0.3
 **Target duration:** Two to three minutes
 
@@ -60,35 +60,36 @@ The correction should add only the evidence needed by the finding: align the run
 
 ## 6. README checklist
 
-- [ ] One-sentence product definition.
-- [ ] Safe default and limitations visible near the top.
-- [ ] Exact installation and runtime instructions.
-- [ ] `coldstart audit` examples.
-- [ ] Terminal/JSON output examples without secrets.
-- [ ] `make test` command.
-- [ ] Docker build/run command and Docker limitation note.
-- [ ] P0/P1/P2 scope.
-- [ ] Actual verification results with dates/commits.
-- [ ] Troubleshooting and contribution guidance.
+- [x] One-sentence product definition.
+- [x] Safe default and limitations visible near the top.
+- [x] Exact installation and runtime instructions.
+- [x] `coldstart audit` examples.
+- [x] Terminal/JSON output examples without secrets.
+- [x] `make test` command.
+- [x] Docker build/run command and Docker limitation note.
+- [x] P0/P1/P2 scope.
+- [x] Actual verification results with dates/host limitations.
+- [x] Troubleshooting and contribution guidance.
 
 ## 7. GitHub/repository checklist
 
 - [ ] Repository name and description match ColdStart.
-- [ ] License and contribution guidance are present if approved by the owner.
+- [x] MIT license and contribution guidance are present.
 - [ ] No secrets, local paths, virtual environments, build outputs, or generated reports are committed unintentionally.
 - [ ] Pinned runtime and lockfiles are tracked.
-- [ ] Dockerfile and `make test` work from a clean checkout.
+- [ ] Dockerfile and `make test` have been executed from a clean Linux checkout.
+- [x] GitHub Actions workflow records the clean Linux/Docker gate.
 - [x] Defective and clean fixtures are included and documented.
-- [ ] Issue/PR templates do not promise unsupported features.
+- [x] Public documentation does not promise unsupported features.
 
 ## 8. Docker and offline checklist
 
-- [ ] `docker build --pull=false --tag coldstart:demo .` actually ran.
-- [ ] Docker smoke command actually ran.
-- [ ] `make test` actually ran with network disabled.
+- [ ] `docker build --tag coldstart:demo .` actually ran on a working Docker Linux engine.
+- [ ] Docker smoke command actually ran on a working Docker Linux engine.
+- [ ] `make test` actually ran with network disabled on Linux/WSL.
 - [ ] Static audit actually ran without project execution.
 - [ ] Any P1 verification has an execution receipt.
-- [ ] Docker unavailable behavior was tested or clearly marked as an environment gap.
+- [x] Docker unavailable behavior is tested and clearly marked as an environment gap.
 
 ## 9. Recording checklist
 

@@ -1,6 +1,6 @@
 # ColdStart Test Strategy
 
-**Status:** M1/M2/M3/M4/M5/M6/M6.1/M7/M8 tests implemented and passing in the available environment; target-runtime execution tests remain open
+**Status:** M1/M2/M3/M4/M5/M6/M6.1/M7/M8 tests implemented and passing under Python 3.12.8; clean Linux/Docker execution remains host-dependent
 **Version:** 1.0
 **Canonical command after implementation:** `make test`
 
@@ -166,12 +166,12 @@ Line/branch coverage measures which implementation paths tests visited; it does 
 
 ## 10. Current test status
 
-The current offline application suite is implemented and runs with the standard library. The latest command was:
+The current offline application suite is implemented and runs with the standard library. The latest exact-runtime command was:
 
 ```text
-PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
+PYTHONPATH=src .venv3128/Scripts/python.exe -m unittest discover -s tests -p "test_*.py" -q
 ```
 
-It ran 151 tests under Python 3.14.7: 148 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The M2-specific module ran 19 tests with 17 passes and the same 2 skips. The M3-specific modules ran 26 tests with 26 passes. The M4-specific modules ran 38 tests with 37 passes and one symlink skip. The M5 hardening module ran 7 tests with 7 passes. The M6 execution module ran 13 tests with 13 passes, the M6 CLI module ran 5 tests with 5 passes, the committed example-fixture module ran 2 tests with 2 passes, the M6 contract module ran 3 tests with 3 passes, the M7 explanation module ran 9 tests with 9 passes, and the M8 comparison module ran 15 tests with 15 passes. Compile checks also passed with `python -m compileall -q src build_backend tests examples`.
+It collected 151 tests under Python 3.12.8: 148 passed and 3 platform-expected cases were skipped because Windows symlink/unreadable-file semantics cannot provide the portable fixture behavior. The focused milestone modules remain covered by their dedicated tests, and the optional `python -m pytest -q` collection run reports 150 passed, 3 skipped, and 12 subtests passed.
 
-The project-local Python 3.12.8 environment now passes the 151-test suite with 3 platform-expected skips. GNU Make, Docker build/run, clean Linux checkout, and actual Docker image execution remain unverified or planned. The M6.1 tests verify the Docker isolation plan, read-only mount, fixed resource limits, no-host-fallback rule, and missing-Docker `not_verified` behavior.
+The M6.1 tests verify the Docker isolation plan, read-only mount, fixed resource limits, no-host-fallback rule, Docker startup failure classification, and `not_verified` behavior. GNU Make, Docker build/run, clean Linux checkout, and actual Docker image execution remain unverified on the current Windows host and are covered by the clean-runner workflow.

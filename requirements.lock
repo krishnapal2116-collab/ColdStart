@@ -1,2 +1,5 @@
-# ColdStart Phase 1 has no third-party runtime dependencies.
-# The runtime is Python 3.12.8 and the audit core uses the standard library.
+# ColdStart intentionally has no third-party runtime dependencies.
+#
+# Keep this file in the repository so dependency policy is explicit and the
+# documented ``pip install --require-hashes`` command remains reproducible.
+# If a runtime dependency is added, record a pinned version and hashes here.

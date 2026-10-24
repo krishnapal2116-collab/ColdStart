@@ -201,7 +201,7 @@ The optional `.coldstart.toml` file controls policy, bounded limits, exclusions,
 
 ## 14. Dependency and runtime strategy
 
-The recommended P0 runtime uses Python 3.12.8 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling may use pinned `pytest` and `ruff`. A committed, hash-pinned dependency lockfile and a Dockerfile are release gates. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md`; the target-runtime and Docker gates remain unverified in the current workspace.
+The recommended P0 runtime uses Python 3.12.8 and the standard library for the audit core (`argparse`, `pathlib`, `tomllib`, `json`, `hashlib`, and `subprocess` only behind the P1 broker). Development tooling remains standard-library-first, with pytest supported only as an optional local collection runner. A committed dependency policy, Dockerfile, and Linux CI gate are release assets. The exact setup commands are specified in `docs/10_BUILD_AND_REPRODUCIBILITY.md`; exact Python 3.12.8 behavior is verified locally while Docker daemon and clean-Linux execution remain host-dependent.
 
 The design avoids a general plugin marketplace. New checks are ordinary reviewed modules registered in one check catalog until the MVP demonstrates a need for a more extensible interface. The implemented `explain` command reads bundled metadata keyed to that same catalog rather than introducing an AI explanation path.
 

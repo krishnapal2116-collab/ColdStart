@@ -136,6 +136,14 @@ _WINDOWS_ABSOLUTE_TEXT = re.compile(
     r"(?<![A-Za-z0-9_])(?:[A-Za-z]:[\\/]|\\\\)[^\s\r\n]+"
 )
 _HOME_ABSOLUTE_TEXT = re.compile(r"(?<![A-Za-z0-9_])~/[^\s\r\n]+")
+_DOCKER_START_FAILURE_MARKERS = (
+    "cannot connect to the docker daemon",
+    "failed to connect to the docker api",
+    "error during connect",
+    "is the docker daemon running",
+    "docker desktop is unable to start",
+    "daemon is not running",
+)
 
 
 class _KindDisplay(str):
@@ -441,6 +449,26 @@ def _safe_label() -> str:
     """Return the only working-directory label exposed by this module."""
 
     return "repository"
+
+
+def _docker_start_failed(
+    exit_code: int | None,
+    stdout_detail: str,
+    stderr_detail: str,
+) -> bool:
+    """Recognize Docker client/daemon startup failures without hiding test failures.
+
+    Docker uses exit code 125 for several startup failures, but a client whose
+    daemon is unavailable can also return a regular non-zero code.  The latter
+    is common on Windows when Docker Desktop is installed but its Linux engine
+    is stopped.  Only known client/daemon messages are classified here; a
+    container's own failing test command remains a normal ``failed`` result.
+    """
+
+    if exit_code == 125:
+        return True
+    output = f"{stdout_detail}\n{stderr_detail}".casefold()
+    return any(marker in output for marker in _DOCKER_START_FAILURE_MARKERS)
 
 
 @dataclass(frozen=True)
@@ -1405,12 +1433,22 @@ def _run_authorized_process(plan: ExecutionPlan, execution_id: str) -> Execution
     elif exit_code is None:
         status = "error"
         reason = "The process did not produce an observed exit code."
-    elif plan.runner == "docker" and exit_code == 125:
+    elif plan.runner == "docker" and _docker_start_failed(
+        exit_code,
+        stdout_detail,
+        stderr_detail,
+    ):
         status = "not_verified"
-        reason = (
-            "Docker could not start the requested isolated operation (daemon or image unavailable); "
-            "no host fallback was attempted."
-        )
+        if plan.kind == "tests" and plan.no_host_fallback:
+            reason = (
+                "Docker could not start the network-isolated operation; network isolation was "
+                "unavailable and no host fallback was attempted."
+            )
+        else:
+            reason = (
+                "Docker could not start the requested operation (daemon or image unavailable); "
+                "no host fallback was attempted."
+            )
     elif exit_code != 0:
         status = "failed"
         reason = "The process exited with a nonzero status."

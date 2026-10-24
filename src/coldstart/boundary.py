@@ -37,6 +37,7 @@ BUILTIN_EXCLUSIONS = (
     ".pytest_cache",
     ".tox",
     ".venv",
+    ".venv3128",
     ".vscode",
     "__pycache__",
     "build",

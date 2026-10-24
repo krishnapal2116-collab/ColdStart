@@ -11,27 +11,60 @@ import base64
 import hashlib
 import os
 import pathlib
+import tomllib
 import zipfile
+from typing import Any, cast
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "src" / "coldstart"
-DIST_NAME = "coldstart"
-DIST_INFO = "coldstart-0.1.0.dist-info"
-WHEEL_NAME = "coldstart-0.1.0-py3-none-any.whl"
+
+
+def _project() -> dict[str, Any]:
+    """Read the public project metadata used to build the wheel."""
+
+    with (ROOT / "pyproject.toml").open("rb") as stream:
+        document = tomllib.load(stream)
+    project = document.get("project")
+    if not isinstance(project, dict):
+        raise RuntimeError("pyproject.toml does not contain [project] metadata")
+    return cast(dict[str, Any], project)
+
+
+PROJECT = _project()
+DIST_NAME = str(PROJECT["name"])
+VERSION = str(PROJECT["version"])
+DIST_INFO = f"{DIST_NAME.replace('-', '_')}-{VERSION}.dist-info"
+WHEEL_NAME = f"{DIST_NAME.replace('-', '_')}-{VERSION}-py3-none-any.whl"
 
 
 def _metadata() -> str:
-    return "\n".join(
-        (
-            "Metadata-Version: 2.1",
-            "Name: coldstart",
-            "Version: 0.1.0",
-            "Summary: A local-first software-repository reproducibility auditor.",
-            "Requires-Python: >=3.12,<3.13",
-            "",
-        )
-    )
+    lines = [
+        "Metadata-Version: 2.1",
+        f"Name: {DIST_NAME}",
+        f"Version: {VERSION}",
+        f"Summary: {PROJECT.get('description', '')}",
+    ]
+    requires_python = PROJECT.get("requires-python")
+    if requires_python:
+        lines.append(f"Requires-Python: {requires_python}")
+    for author in PROJECT.get("authors", []):
+        if isinstance(author, dict):
+            name = author.get("name")
+            email = author.get("email")
+            if name and email:
+                lines.append(f"Author-email: {name} <{email}>")
+            elif name:
+                lines.append(f"Author: {name}")
+    for dependency in PROJECT.get("dependencies", []):
+        lines.append(f"Requires-Dist: {dependency}")
+    for classifier in PROJECT.get("classifiers", []):
+        lines.append(f"Classifier: {classifier}")
+    for label, url in sorted(PROJECT.get("urls", {}).items()):
+        lines.append(f"Project-URL: {label}, {url}")
+    if PROJECT.get("readme"):
+        lines.append("Description-Content-Type: text/markdown")
+    return "\n".join(lines + [""])
 
 
 def _wheel_metadata() -> str:
@@ -47,7 +80,12 @@ def _wheel_metadata() -> str:
 
 
 def _entry_points() -> str:
-    return "[console_scripts]\ncoldstart = coldstart.cli:main\n"
+    scripts = PROJECT.get("scripts", {})
+    if not isinstance(scripts, dict):
+        return ""
+    lines = ["[console_scripts]"]
+    lines.extend(f"{name} = {target}" for name, target in sorted(scripts.items()))
+    return "\n".join(lines) + "\n"
 
 
 def _digest(data: bytes) -> str:
@@ -62,7 +100,7 @@ def _wheel_bytes(editable: bool) -> dict[str, bytes]:
         f"{DIST_INFO}/entry_points.txt": _entry_points().encode(),
     }
     if editable:
-        pth_name = "__editable__.coldstart-0.1.0.pth"
+        pth_name = f"__editable__.{DIST_NAME}-{VERSION}.pth"
         files[pth_name] = (str(SOURCE.parent) + os.linesep).encode()
     else:
         for path in sorted(SOURCE.rglob("*.py")):

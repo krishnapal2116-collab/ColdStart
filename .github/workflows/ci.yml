@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.8'
+
+      - name: Install the local package
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.lock
+          python -m pip install --no-deps --no-build-isolation -e .
+
+      - name: Run the offline test suite
+        run: make test PYTHON=python
+
+      - name: Audit the clean fixture
+        run: |
+          PYTHONPATH=src python -m coldstart audit examples/clean-python --format json > clean-report.json
+
+      - name: Audit the defective fixture
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=src python -m coldstart audit examples/defective-python --format json > defective-report.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Build the Linux container
+        run: docker build --tag coldstart:ci .
+
+      - name: Smoke-test the Linux container
+        run: >-
+          docker run --rm --read-only --network none
+          --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m
+          coldstart:ci --help
+
+  windows-static:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.8'
+
+      - name: Install the local package
+        shell: pwsh
+        run: |
+          py -3.12 -m pip install --require-hashes -r requirements-dev.lock
+          py -3.12 -m pip install --no-deps --no-build-isolation -e .
+
+      - name: Run the Windows static suite
+        shell: pwsh
+        run: py -3.12 -m unittest discover -s tests -p "test_*.py" -q
+
+      - name: Audit the clean fixture on Windows
+        shell: pwsh
+        run: py -3.12 -m coldstart audit examples/clean-python --format json
