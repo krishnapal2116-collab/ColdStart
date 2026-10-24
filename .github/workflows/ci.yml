@@ -75,7 +75,11 @@ jobs:
           & py -3.12 -m unittest discover -s tests -p "test_*.py" -v *> windows-unittest.log
           $status = $LASTEXITCODE
           Get-Content windows-unittest.log
-          if ($status -ne 0) { exit $status }
+          if ($status -ne 0) {
+            $details = (Get-Content windows-unittest.log -Raw).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Windows unittest failure::$details"
+            exit $status
+          }
 
       - name: Upload Windows test log
         if: always()
