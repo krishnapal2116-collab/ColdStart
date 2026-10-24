@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -14,11 +15,16 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "examples" / "clean-python"
 
 
-def run_verify(*arguments: str) -> subprocess.CompletedProcess[str]:
+def run_verify(
+    *arguments: str,
+    path_override: str | None = None,
+) -> subprocess.CompletedProcess[str]:
     """Run the CLI from the repository root with the in-tree source path."""
 
     environment = os.environ.copy()
     environment["PYTHONPATH"] = "src"
+    if path_override is not None:
+        environment["PATH"] = path_override
     return subprocess.run(
         [sys.executable, "-m", "coldstart", "verify", *arguments],
         cwd=ROOT,
@@ -139,15 +145,17 @@ class Phase6M6ContractTests(unittest.TestCase):
             self.assertNotIn(absolute_path, serialized_plan)
 
     def test_authorized_offline_report_is_fail_closed_without_host_fallback(self) -> None:
-        result = run_verify(
-            "examples/clean-python",
-            "--kind",
-            "tests",
-            "--offline",
-            "--authorize",
-            "--format",
-            "json",
-        )
+        with tempfile.TemporaryDirectory(prefix="coldstart-m6-contract-no-docker-") as empty_path:
+            result = run_verify(
+                "examples/clean-python",
+                "--kind",
+                "tests",
+                "--offline",
+                "--authorize",
+                "--format",
+                "json",
+                path_override=empty_path,
+            )
         report = load_report(result)
 
         self.assertIn(result.returncode, {1, 3, 4}, result.stderr)

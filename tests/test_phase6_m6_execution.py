@@ -499,7 +499,8 @@ class Phase6M6ExecutionTests(unittest.TestCase):
                 command=_python_unittest_command(),
             )
 
-            receipt = execute_execution_plan(plan, authorize=True)
+            with patch("coldstart.execution.shutil.which", return_value=None):
+                receipt = execute_execution_plan(plan, authorize=True)
 
         self.assertEqual(receipt.status, "not_verified")
         self.assertIn("network isolation", receipt.reason)
