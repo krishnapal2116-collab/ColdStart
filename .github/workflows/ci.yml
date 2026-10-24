@@ -71,7 +71,19 @@ jobs:
 
       - name: Run the Windows static suite
         shell: pwsh
-        run: py -3.12 -m unittest discover -s tests -p "test_*.py" -q
+        run: |
+          & py -3.12 -m unittest discover -s tests -p "test_*.py" -v *> windows-unittest.log
+          $status = $LASTEXITCODE
+          Get-Content windows-unittest.log
+          if ($status -ne 0) { exit $status }
+
+      - name: Upload Windows test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unittest-log
+          path: windows-unittest.log
+          if-no-files-found: ignore
 
       - name: Audit the clean fixture on Windows
         shell: pwsh
