@@ -7,6 +7,7 @@ paths, malformed values, and ambiguous aliases before discovery starts.
 
 from __future__ import annotations
 
+import os
 import re
 import tomllib
 from dataclasses import dataclass
@@ -338,7 +339,15 @@ def load_config(
         raise ConfigValidationError("configuration path cannot be inspected") from error
     # Keep report provenance safe even when an explicit config is outside the
     # repository; the file itself is still bounded and data-only.
-    source_label = CONFIG_FILENAME if candidate == root / CONFIG_FILENAME else "<provided-config>"
+    candidate_text = os.path.normcase(os.path.abspath(os.fspath(candidate)))
+    root_config_text = os.path.normcase(
+        os.path.abspath(os.fspath(root / CONFIG_FILENAME))
+    )
+    source_label = (
+        CONFIG_FILENAME
+        if candidate_text == root_config_text
+        else "<provided-config>"
+    )
     return parse_config(_read_bounded(candidate), source_path=source_label)
 
 

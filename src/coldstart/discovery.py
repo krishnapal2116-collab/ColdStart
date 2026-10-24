@@ -277,15 +277,38 @@ def _symlink_classification(root: Path, path: Path) -> tuple[bool, str]:
     except (OSError, UnicodeError):
         return False, "unreadable-target"
     try:
+        root_path = root.resolve(strict=False)
         target_path = (path.parent / raw_target).resolve(strict=False)
-        root_text = os.path.normcase(os.path.abspath(os.fspath(root)))
-        target_text = os.path.normcase(os.path.abspath(os.fspath(target_path)))
+        root_text = os.path.normcase(
+            os.path.normpath(os.path.abspath(os.fspath(root_path)))
+        )
+        target_text = os.path.normcase(
+            os.path.normpath(os.path.abspath(os.fspath(target_path)))
+        )
+        # Windows can expose extended-length paths for symlink targets.  Strip
+        # only the comparison prefix; the target is never opened or traversed.
+        for prefix in ("\\\\?\\UNC\\", "\\\\?\\", "\\??\\"):
+            if root_text.startswith(prefix):
+                root_text = (
+                    "\\\\" + root_text[len(prefix) :]
+                    if prefix == "\\\\?\\UNC\\"
+                    else root_text[len(prefix) :]
+                )
+            if target_text.startswith(prefix):
+                target_text = (
+                    "\\\\" + target_text[len(prefix) :]
+                    if prefix == "\\\\?\\UNC\\"
+                    else target_text[len(prefix) :]
+                )
         common = os.path.commonpath((root_text, target_text))
         if common != root_text:
             return True, "external"
         return False, "internal"
-    except (OSError, ValueError):
+    except (OSError, RuntimeError):
         return False, "unresolved-target"
+    except ValueError:
+        # Different Windows drives (or roots) are necessarily external.
+        return True, "external"
 
 
 def _bounded_sorted_entries(
