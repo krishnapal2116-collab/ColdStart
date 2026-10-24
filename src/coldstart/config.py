@@ -339,9 +339,17 @@ def load_config(
         raise ConfigValidationError("configuration path cannot be inspected") from error
     # Keep report provenance safe even when an explicit config is outside the
     # repository; the file itself is still bounded and data-only.
-    candidate_text = os.path.normcase(os.path.abspath(os.fspath(candidate)))
+    try:
+        candidate_for_compare = candidate.resolve(strict=False)
+        root_config_for_compare = (root / CONFIG_FILENAME).resolve(strict=False)
+    except (OSError, RuntimeError):
+        candidate_for_compare = candidate
+        root_config_for_compare = root / CONFIG_FILENAME
+    candidate_text = os.path.normcase(
+        os.path.normpath(os.path.abspath(os.fspath(candidate_for_compare)))
+    )
     root_config_text = os.path.normcase(
-        os.path.abspath(os.fspath(root / CONFIG_FILENAME))
+        os.path.normpath(os.path.abspath(os.fspath(root_config_for_compare)))
     )
     source_label = (
         CONFIG_FILENAME
